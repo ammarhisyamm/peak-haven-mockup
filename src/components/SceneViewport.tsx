@@ -14,7 +14,7 @@ import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import PackagingModel, { getModelLayout, useSceneTextures } from './PackagingModel';
 import { getLayout, placeInstances, type LayoutId } from '../constants/layouts';
-import type { ArtworkMap, FinishId, PackagingPreset } from '../constants/presets';
+import { canOpen, type ArtworkMap, type FinishId, type PackagingPreset } from '../constants/presets';
 import type { ViewSettings } from '../state/settings';
 
 export type ViewName = 'front' | 'angle' | 'side' | 'top';
@@ -262,7 +262,13 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
 
   const layout = useMemo(() => getModelLayout(preset), [preset]);
   const layoutDef = getLayout(layoutId);
-  const bounds = useMemo(() => placeInstances(layoutDef, layout.size).bounds, [layoutDef, layout.size]);
+  // With the lid up, frame the raised lid too (it stands about one depth above the top).
+  const lidUp = canOpen(preset) && open > 0.3;
+  const bounds = useMemo(() => {
+    const b = placeInstances(layoutDef, layout.size).bounds.clone();
+    if (lidUp) b.max.y += layout.size[2] * 0.9;
+    return b;
+  }, [layoutDef, layout.size, lidUp]);
   const sizeKey = layout.size.map((n) => n.toFixed(3)).join('x');
 
   // A preset, size or layout change returns to the layout's default view.
@@ -271,7 +277,7 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
   }, [preset.id, layoutId, sizeKey]);
 
   const direction = view.dir ?? layoutDef.view ?? VIEW_DIRECTIONS.angle;
-  const framingKey = `${preset.id}:${layoutId}:${sizeKey}:${view.nonce}`;
+  const framingKey = `${preset.id}:${layoutId}:${sizeKey}:${view.nonce}:${lidUp}`;
   const initial = useMemo(() => computeFraming(bounds, 16 / 10, direction), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useImperativeHandle(

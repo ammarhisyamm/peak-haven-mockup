@@ -61,7 +61,7 @@ export default function EditPanel({
 
   return (
     <div>
-      <PanelTitle>Upload images</PanelTitle>
+      <PanelTitle>Artwork</PanelTitle>
       <DropZone
         url={artwork[mainFace]}
         title="Upload"
@@ -78,7 +78,7 @@ export default function EditPanel({
       <button
         type="button"
         onClick={onDownloadDieline}
-        className="mx-auto mt-3 flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-violet-700"
+        className="mx-auto mt-3 flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-emerald-700"
       >
         <Download className="h-4 w-4" />
         Download dieline (SVG)
@@ -169,7 +169,7 @@ export default function EditPanel({
                 if (HEX_COLOR.test(e.target.value)) onBaseColor(e.target.value.toLowerCase());
               }}
               onBlur={() => setHexDraft(null)}
-              className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 font-mono text-sm uppercase focus:border-violet-500 focus:outline-none"
+              className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 font-mono text-sm uppercase focus:border-emerald-500 focus:outline-none"
             />
           </div>
         </Field>

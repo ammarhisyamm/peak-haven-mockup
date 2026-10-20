@@ -17,7 +17,7 @@ export default function MorePanel({
 }) {
   return (
     <div>
-      <PanelTitle>More</PanelTitle>
+      <PanelTitle>Scene &amp; export</PanelTitle>
 
       <SectionLabel>Background</SectionLabel>
       <div className="flex flex-wrap items-center gap-2">
@@ -26,7 +26,7 @@ export default function MorePanel({
           onClick={() => onChange({ transparentBg: true })}
           aria-pressed={settings.transparentBg}
           className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-            settings.transparentBg ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-600'
+            settings.transparentBg ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600'
           }`}
         >
           Transparent
@@ -38,7 +38,7 @@ export default function MorePanel({
             onClick={() => onChange({ bgColor: color, transparentBg: false })}
             aria-label={`Background ${color}`}
             className={`h-8 w-8 rounded-lg border border-slate-300 ${
-              !settings.transparentBg && settings.bgColor === color ? 'ring-2 ring-violet-500 ring-offset-2' : ''
+              !settings.transparentBg && settings.bgColor === color ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
             }`}
             style={{ background: color }}
           />
@@ -56,7 +56,7 @@ export default function MorePanel({
       <select
         value={settings.environment}
         onChange={(e) => onChange({ environment: e.target.value as ViewSettings['environment'] })}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
       >
         {ENVIRONMENTS.map((env) => (
           <option key={env.id} value={env.id}>
@@ -75,7 +75,7 @@ export default function MorePanel({
           step={0.05}
           value={settings.lightIntensity}
           onChange={(e) => onChange({ lightIntensity: Number(e.target.value) })}
-          className="w-full accent-violet-600"
+          className="w-full accent-emerald-600"
         />
       </label>
 
@@ -93,7 +93,7 @@ export default function MorePanel({
             step={0.05}
             value={settings.shadowOpacity}
             onChange={(e) => onChange({ shadowOpacity: Number(e.target.value) })}
-            className="w-full accent-violet-600"
+            className="w-full accent-emerald-600"
           />
         </label>
       )}

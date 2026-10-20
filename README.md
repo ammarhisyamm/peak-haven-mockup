@@ -13,14 +13,14 @@ npm run build      # type-check + production build into dist/
 npm run preview    # serve the production build
 ```
 
-## Editor (Pacdora-style)
+## Editor
 
 - **Edit**: upload one full dieline design (split onto every face automatically) or per-face artwork, pick a material (Matte, Glossy, Kraft, Corrugated, Metallic), base color, custom size, and download the dieline template as SVG.
 - **Models**: searchable library (boxes, mailers, bottles, vials, vial + box sets, labels), saved projects (stored in this browser with artwork), custom size in mm or inches.
 - **Layout**: single, duo, trio, front & back, standing + lying, stack, fan and flat lay arrangements.
 - **Video**: record a 360° spin or open/close animation (MP4 or WebM, 4 to 12 s).
 - **More**: background color or transparent, lighting environment, brightness, shadows, auto-rotate, export size (1080 to 6K), PNG/JPG, units.
-- **Toolbars**: zoom, open/close slider for boxes, Front / 3/4 / Side / Top views, dieline viewer, rotate/pan, undo/redo (Ctrl/Cmd+Z, Shift+Ctrl/Cmd+Z), reset view and export.
+- **Layout of the editor**: top bar (model, undo/redo, export), canvas tools on the left (rotate, pan, zoom, fit, dieline), views and lid slider at the bottom, inspector with tabs docked on the right.
 - AI Background / AI Design are not included yet.
 
 ## Structure

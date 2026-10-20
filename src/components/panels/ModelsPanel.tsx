@@ -63,7 +63,7 @@ export default function ModelsPanel({
 
       {tab === 'library' && (
         <>
-          <label className="mt-3 flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20">
+          <label className="mt-3 flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
             <Search className="h-4 w-4 text-slate-400" />
             <input
               value={query}
@@ -78,10 +78,10 @@ export default function ModelsPanel({
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
-                className={`rounded-lg border px-2.5 py-1 text-sm transition ${
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                   filter === f
-                    ? 'border-violet-500 bg-violet-50 text-violet-700'
-                    : 'border-transparent text-slate-700 hover:bg-slate-100'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {f === 'all' ? 'All' : CATEGORY_LABELS[f]}
@@ -97,7 +97,7 @@ export default function ModelsPanel({
                   type="button"
                   onClick={() => onSelect(p.id)}
                   className={`group rounded-xl border p-2 text-left transition ${
-                    active ? 'border-violet-500 ring-2 ring-violet-500/20' : 'border-slate-200 hover:border-slate-300'
+                    active ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <div className="aspect-square rounded-lg bg-gradient-to-b from-slate-50 to-slate-100 p-2">
@@ -167,13 +167,13 @@ function ProjectsTab({ onSave, onOpen }: { onSave: (name: string) => Promise<voi
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && save()}
           placeholder="Project name"
-          className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+          className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         />
         <button
           type="button"
           onClick={save}
           disabled={busy}
-          className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save

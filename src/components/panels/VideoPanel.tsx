@@ -46,7 +46,7 @@ export default function VideoPanel({
 
   return (
     <div>
-      <PanelTitle>Video</PanelTitle>
+      <PanelTitle>Animated video</PanelTitle>
       <p className="-mt-2 mb-1 text-sm text-slate-500">Record an animation of the current scene from the current camera.</p>
 
       <SectionLabel>Animation</SectionLabel>
@@ -75,7 +75,7 @@ export default function VideoPanel({
         type="button"
         onClick={record}
         disabled={busy}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 disabled:cursor-wait disabled:opacity-70"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-70"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
         {busy ? `Recording ${seconds}s…` : 'Record video'}

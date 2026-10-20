@@ -17,7 +17,7 @@ import {
 export function PanelTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h2 className="text-lg font-semibold tracking-tight text-slate-900">{children}</h2>
+      <h2 className="text-base font-semibold tracking-tight text-slate-900">{children}</h2>
       {aside}
     </div>
   );
@@ -60,7 +60,7 @@ export function Segmented<T extends string>({
           disabled={o.disabled}
           onClick={() => onChange(o.value)}
           className={`flex-1 rounded-lg px-2 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
-            value === o.value ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            value === o.value ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           {o.label}
@@ -79,7 +79,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-10 rounded-full transition ${checked ? 'bg-violet-600' : 'bg-slate-300'}`}
+        className={`relative h-6 w-10 rounded-full transition ${checked ? 'bg-emerald-600' : 'bg-slate-300'}`}
       >
         <span
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`}
@@ -129,7 +129,7 @@ export function DropZone({
       onDragLeave={() => setOver(false)}
       onDrop={handleDrop}
       className={`relative flex min-h-[180px] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 border-dashed p-4 text-center transition ${
-        over ? 'border-violet-500 bg-violet-100' : 'border-violet-300 bg-violet-50'
+        over ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-300 bg-emerald-50'
       }`}
     >
       {url ? (
@@ -139,14 +139,14 @@ export function DropZone({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500"
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
             >
               Replace
             </button>
             <button
               type="button"
               onClick={onClear}
-              className="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Remove
             </button>
@@ -154,11 +154,11 @@ export function DropZone({
         </>
       ) : (
         <>
-          <Upload className="h-8 w-8 text-violet-500" />
+          <Upload className="h-8 w-8 text-emerald-500" />
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-base font-semibold text-white shadow-sm hover:bg-violet-500"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-500"
           >
             <Upload className="h-4 w-4" />
             {title}
@@ -212,13 +212,13 @@ export function FaceUploadRow({
         if (file) onChange(face, file);
       }}
       className={`flex items-center gap-3 rounded-xl border p-2 transition ${
-        dragOver ? 'border-violet-500 bg-violet-50' : 'border-slate-200 bg-white'
+        dragOver ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'
       }`}
     >
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-violet-400 hover:text-violet-500"
+        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-500"
         aria-label={`Upload ${label}`}
       >
         {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : <Layers className="h-4 w-4" />}
@@ -333,7 +333,7 @@ export function SizeEditor({
               value={draft[f.key] ?? ''}
               onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && apply()}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm tabular-nums focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             />
           </label>
         ))}
@@ -349,7 +349,7 @@ export function SizeEditor({
           type="button"
           onClick={apply}
           disabled={!valid}
-          className="flex-1 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
         >
           Apply size
         </button>

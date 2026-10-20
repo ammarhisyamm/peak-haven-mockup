@@ -2,16 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   Box,
   Download,
+  Focus,
   Hand,
   LayoutGrid,
   Loader2,
   Minus,
-  MousePointer2,
   MoreHorizontal,
+  Package,
+  PanelRightClose,
+  PanelRightOpen,
   PenTool,
   Plus,
+  Rotate3d,
   Redo2,
-  RotateCcw,
   Ruler,
   Undo2,
   Video,
@@ -39,7 +42,7 @@ import { DEFAULT_SETTINGS, type ViewSettings } from './state/settings';
 
 type PanelId = 'edit' | 'models' | 'layout' | 'video' | 'more';
 
-const RAIL: { id: PanelId; label: string; icon: LucideIcon }[] = [
+const TABS: { id: PanelId; label: string; icon: LucideIcon }[] = [
   { id: 'edit', label: 'Edit', icon: PenTool },
   { id: 'models', label: 'Models', icon: Box },
   { id: 'layout', label: 'Layout', icon: LayoutGrid },
@@ -53,12 +56,6 @@ const VIEWS: { id: ViewName; label: string }[] = [
   { id: 'side', label: 'Side' },
   { id: 'top', label: 'Top' },
 ];
-
-/* Floating layout geometry (px), also used to center the model beside the panels. */
-const MARGIN = 16;
-const RAIL_W = 84;
-const PANEL_W = 360;
-const GAP = 12;
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -89,18 +86,6 @@ async function flattenOnColor(dataUrl: string, color: string, type: 'image/png' 
   );
 }
 
-function useIsDesktop() {
-  const query = '(min-width: 768px)';
-  const [desktop, setDesktop] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const onChange = () => setDesktop(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return desktop;
-}
-
 export default function App() {
   const viewportRef = useRef<SceneViewportHandle>(null);
   const { doc, update, replace, undo, redo, canUndo, canRedo } = useEditor();
@@ -110,7 +95,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [dielineUrl, setDielineUrl] = useState<string | null>(null);
-  const isDesktop = useIsDesktop();
 
   const basePreset = useMemo(() => getPreset(doc.presetId), [doc.presetId]);
   const preset = useMemo(() => resolvePreset(basePreset, doc.size), [basePreset, doc.size]);
@@ -235,7 +219,6 @@ export default function App() {
   /* ---------------- Layout ---------------- */
 
   const panelOpen = panel !== null;
-  const viewOffsetPx = isDesktop ? (panelOpen ? (MARGIN + RAIL_W + GAP + PANEL_W) / 2 : (MARGIN + RAIL_W) / 2) : 0;
   const togglePanel = (id: PanelId) => setPanel((p) => (p === id ? null : id));
 
   let panelContent: ReactNode = null;
@@ -285,155 +268,152 @@ export default function App() {
   }
 
   return (
-    <div
-      className="relative h-full w-full overflow-hidden bg-gradient-to-b from-slate-300 via-slate-200 to-slate-100"
-      style={settings.transparentBg ? undefined : { background: settings.bgColor }}
-    >
-      {/* The viewport fills the screen; panels float over it. */}
-      <div className="absolute inset-0">
-        <SceneViewport
-          ref={viewportRef}
-          preset={preset}
-          artwork={doc.artwork}
-          finish={doc.finish}
-          baseColor={doc.baseColor}
-          layoutId={doc.layoutId}
-          open={doc.open}
-          settings={settings}
-          panMode={panMode}
-          viewOffsetPx={viewOffsetPx}
-        />
-      </div>
-
-      {/* Model name + size */}
-      <div
-        className={`pointer-events-none absolute inset-x-0 top-4 flex justify-center pl-4 pr-20 ${
-          panelOpen ? 'md:pl-[472px]' : 'md:pl-[100px]'
-        }`}
-      >
-        <div className="pointer-events-auto max-w-full truncate rounded-full border border-white/70 bg-white/85 px-4 py-1.5 text-center text-sm shadow-sm backdrop-blur">
-          <span className="font-semibold text-slate-900">{preset.name}</span>
-          <span className="ml-2 tabular-nums text-slate-500">{formatDimensions(preset, settings.unit)}</span>
-          <span className="ml-2 hidden text-slate-400 lg:inline">· {CATEGORY_LABELS[preset.category]}</span>
+    <div className="flex h-full w-full flex-col bg-white text-slate-900">
+      {/* Top bar */}
+      <header className="z-20 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-3 md:px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <Package className="h-4 w-4" strokeWidth={2} />
+          </div>
+          <div className="hidden leading-tight sm:block">
+            <p className="text-sm font-semibold tracking-tight">Peak Haven</p>
+            <p className="text-[11px] text-slate-500">Mockup Studio</p>
+          </div>
         </div>
-      </div>
 
-      {/* Left rail */}
-      <nav
-        className="absolute inset-x-2 bottom-2 z-20 flex justify-around rounded-2xl bg-white/95 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur md:inset-x-auto md:bottom-auto md:left-4 md:top-4 md:w-[84px] md:flex-col md:justify-start md:gap-1 md:py-3"
-        aria-label="Tools"
-      >
-        {RAIL.map((item) => {
-          const active = panel === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => togglePanel(item.id)}
-              aria-pressed={active}
-              className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition md:py-3 ${
-                active ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              <Icon className="h-6 w-6" strokeWidth={1.75} />
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
+        <div className="flex min-w-0 flex-1 justify-center">
+          <div className="flex min-w-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm">
+            <span className="truncate font-medium">{preset.name}</span>
+            <span className="hidden shrink-0 tabular-nums text-slate-500 md:inline">
+              {formatDimensions(preset, settings.unit)}
+            </span>
+            <span className="hidden shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 lg:inline">
+              {CATEGORY_LABELS[preset.category]}
+            </span>
+          </div>
+        </div>
 
-      {/* Floating panel */}
-      {panelContent && (
-        <aside className="absolute inset-x-2 bottom-[84px] z-20 max-h-[55vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl shadow-slate-900/10 md:inset-x-auto md:bottom-4 md:left-[112px] md:top-4 md:max-h-none md:w-[360px]">
+        <div className="flex shrink-0 items-center gap-1">
+          <ToolButton label="Undo (Ctrl/⌘ Z)" onClick={undo} disabled={!canUndo} icon={Undo2} />
+          <ToolButton label="Redo (Shift Ctrl/⌘ Z)" onClick={redo} disabled={!canRedo} icon={Redo2} />
+          <span className="mx-1 hidden h-6 w-px bg-slate-200 md:block" />
+          <span className="hidden md:block">
+            <ToolButton
+              label={panelOpen ? 'Hide panel' : 'Show panel'}
+              onClick={() => setPanel((p) => (p ? null : 'edit'))}
+              icon={panelOpen ? PanelRightClose : PanelRightOpen}
+            />
+          </span>
           <button
             type="button"
-            onClick={() => setPanel(null)}
-            className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Close panel"
+            onClick={exportImage}
+            disabled={isExporting}
+            className="ml-1 flex items-center gap-2 whitespace-nowrap rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70"
           >
-            <X className="h-4 w-4" />
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="hidden sm:inline">Export {settings.exportFormat.toUpperCase()}</span>
           </button>
-          {panelContent}
-        </aside>
-      )}
-
-      {/* Right toolbar */}
-      <div className="absolute right-4 top-4 z-10 flex flex-col gap-1 rounded-2xl bg-white/95 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur">
-        <ToolButton label="Rotate" active={!panMode} onClick={() => setPanMode(false)} icon={MousePointer2} />
-        <ToolButton label="Pan" active={panMode} onClick={() => setPanMode(true)} icon={Hand} />
-        <hr className="mx-2 my-1 border-slate-200" />
-        <ToolButton label="Undo (Ctrl/⌘ Z)" onClick={undo} disabled={!canUndo} icon={Undo2} />
-        <ToolButton label="Redo (Shift Ctrl/⌘ Z)" onClick={redo} disabled={!canRedo} icon={Redo2} />
-        <hr className="mx-2 my-1 border-slate-200" />
-        <ToolButton label="Reset view" onClick={() => viewportRef.current?.resetView()} icon={RotateCcw} />
-        <ToolButton label="Export" onClick={exportImage} disabled={isExporting} icon={isExporting ? Loader2 : Download} />
-      </div>
-
-      {/* Bottom toolbar */}
-      <div
-        className="absolute bottom-4 z-10 hidden -translate-x-1/2 items-center gap-2 md:flex"
-        style={{ left: `calc(50% + ${viewOffsetPx}px)` }}
-      >
-        <div className="flex items-center gap-1 rounded-2xl bg-white/95 px-2 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur">
-          <ToolButton label="Zoom out" onClick={() => viewportRef.current?.zoom(1.2)} icon={Minus} />
-          <ToolButton label="Zoom in" onClick={() => viewportRef.current?.zoom(1 / 1.2)} icon={Plus} />
-          <span className="mx-1 h-6 w-px bg-slate-200" />
-          <label
-            className={`flex items-center gap-2 px-1 text-sm ${openable ? 'text-slate-700' : 'text-slate-300'}`}
-            title={openable ? 'Open or close the lid' : 'Only boxes can open'}
-          >
-            Open
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              disabled={!openable}
-              value={1 - doc.open}
-              onChange={(e) => update({ open: 1 - Number(e.target.value) }, 'open')}
-              className="w-28 accent-violet-600 disabled:opacity-40"
-              aria-label="Open or close the box"
-            />
-            Close
-          </label>
-          <span className="mx-1 h-6 w-px bg-slate-200" />
-          {VIEWS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => viewportRef.current?.setView(v.id)}
-              className="rounded-lg px-2 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              title={`${v.label} view`}
-            >
-              {v.label}
-            </button>
-          ))}
-          <span className="mx-1 h-6 w-px bg-slate-200" />
-          <ToolButton label="View dieline" onClick={showDieline} icon={Ruler} />
         </div>
-        <button
-          type="button"
-          onClick={exportImage}
-          disabled={isExporting}
-          className="flex items-center gap-2 whitespace-nowrap rounded-2xl bg-violet-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 hover:bg-violet-500 disabled:cursor-wait disabled:opacity-70"
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        {/* Stage */}
+        <main
+          className="relative min-h-[50vh] flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_center,_#ffffff_0%,_#eef1f5_55%,_#dfe4ea_100%)]"
+          style={settings.transparentBg ? undefined : { background: settings.bgColor }}
         >
-          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Export {settings.exportFormat.toUpperCase()}
-        </button>
+          {/* Subtle dot grid so the stage reads as a canvas. */}
+          {settings.transparentBg && (
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:22px_22px] opacity-50" />
+          )}
+          <div className="absolute inset-0">
+            <SceneViewport
+              ref={viewportRef}
+              preset={preset}
+              artwork={doc.artwork}
+              finish={doc.finish}
+              baseColor={doc.baseColor}
+              layoutId={doc.layoutId}
+              open={doc.open}
+              settings={settings}
+              panMode={panMode}
+              viewOffsetPx={0}
+            />
+          </div>
+
+          {/* Canvas tools, left edge */}
+          <div className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-xl border border-slate-200/80 bg-white/90 p-1 shadow-sm backdrop-blur">
+            <ToolButton label="Rotate" active={!panMode} onClick={() => setPanMode(false)} icon={Rotate3d} />
+            <ToolButton label="Pan" active={panMode} onClick={() => setPanMode(true)} icon={Hand} />
+            <hr className="mx-1.5 my-0.5 border-slate-200" />
+            <ToolButton label="Zoom in" onClick={() => viewportRef.current?.zoom(1 / 1.2)} icon={Plus} />
+            <ToolButton label="Zoom out" onClick={() => viewportRef.current?.zoom(1.2)} icon={Minus} />
+            <ToolButton label="Fit to view" onClick={() => viewportRef.current?.resetView()} icon={Focus} />
+            <hr className="mx-1.5 my-0.5 border-slate-200" />
+            <ToolButton label="View dieline" onClick={showDieline} icon={Ruler} />
+          </div>
+
+          {/* Views + lid, bottom */}
+          <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center px-3">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200/80 bg-white/90 p-1 shadow-sm backdrop-blur">
+              {VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => viewportRef.current?.setView(v.id)}
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  title={`${v.label} view`}
+                >
+                  {v.label}
+                </button>
+              ))}
+              {openable && (
+                <>
+                  <span className="mx-1 h-6 w-px shrink-0 bg-slate-200" />
+                  <label className="flex shrink-0 items-center gap-2 px-2 text-xs font-medium text-slate-600" title="Open or close the lid">
+                    Lid
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={doc.open}
+                      onChange={(e) => update({ open: Number(e.target.value) }, 'open')}
+                      className="w-28 accent-emerald-600 focus:outline-none"
+                      aria-label="Open the box"
+                    />
+                    <span className="w-8 tabular-nums text-slate-400">{Math.round(doc.open * 100)}%</span>
+                  </label>
+                </>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* Inspector, right */}
+        {panelOpen ? (
+          <aside className="z-10 flex max-h-[50vh] min-h-0 flex-col border-t border-slate-200 bg-white md:max-h-none md:w-[380px] md:border-l md:border-t-0">
+            <Tabs panel={panel} onSelect={togglePanel} />
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-5">{panelContent}</div>
+          </aside>
+        ) : (
+          <aside className="z-10 border-t border-slate-200 bg-white md:w-16 md:border-l md:border-t-0">
+            <Tabs panel={null} onSelect={togglePanel} compact />
+          </aside>
+        )}
       </div>
 
       {toast && (
         <div
           role="status"
-          className="absolute left-1/2 top-16 z-30 -translate-x-1/2 rounded-xl bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
+          className="fixed left-1/2 top-[68px] z-30 -translate-x-1/2 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
         >
           {toast}
         </div>
       )}
 
       {dielineUrl && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4" onClick={closeDieline}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={closeDieline}>
           <div
             className="flex max-h-full w-full max-w-4xl flex-col rounded-2xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -461,7 +441,7 @@ export default function App() {
             <button
               type="button"
               onClick={downloadDieline}
-              className="mt-4 flex items-center justify-center gap-2 self-end rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-500"
+              className="mt-4 flex items-center justify-center gap-2 self-end rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
             >
               <Download className="h-4 w-4" />
               Download SVG
@@ -470,6 +450,43 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function Tabs({
+  panel,
+  onSelect,
+  compact,
+}: {
+  panel: PanelId | null;
+  onSelect: (id: PanelId) => void;
+  compact?: boolean;
+}) {
+  return (
+    <nav
+      aria-label="Panels"
+      className={`flex shrink-0 gap-1 p-2 ${compact ? 'justify-around md:flex-col md:justify-start' : 'border-b border-slate-200'}`}
+    >
+      {TABS.map((item) => {
+        const active = panel === item.id;
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            aria-pressed={active}
+            title={item.label}
+            className={`flex flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium transition ${
+              compact ? 'md:flex-none' : ''
+            } ${active ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+          >
+            <Icon className="h-5 w-5" strokeWidth={1.75} />
+            {item.label}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -494,11 +511,11 @@ function ToolButton({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex h-10 w-10 items-center justify-center rounded-xl transition disabled:cursor-not-allowed disabled:opacity-30 ${
-        active ? 'bg-violet-100 text-violet-700' : 'text-slate-700 hover:bg-slate-100'
+      className={`flex h-9 w-9 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-30 ${
+        active ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       }`}
     >
-      <Icon className="h-5 w-5" strokeWidth={1.75} />
+      <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
     </button>
   );
 }
