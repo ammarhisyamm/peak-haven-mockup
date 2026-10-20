@@ -10,7 +10,6 @@ import {
   Minus,
   Moon,
   MoreHorizontal,
-  Asterisk,
   PanelRightClose,
   PanelRightOpen,
   PenTool,
@@ -44,7 +43,6 @@ import { useEditor, type EditorDoc } from './state/editor';
 import { DEFAULT_SETTINGS, type ViewSettings } from './state/settings';
 import { useTheme } from './state/theme';
 import { Badge } from './components/reui/badge';
-import { IconTile } from './components/reui/icon-tile';
 import { Button } from './components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './components/ui/dialog';
 import { Separator } from './components/ui/separator';
@@ -293,12 +291,9 @@ export default function App() {
       <div className="flex h-full w-full flex-col bg-background text-foreground">
         {/* Top bar */}
         <header className="z-20 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-3 md:px-4">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <IconTile variant="solid" size="sm" className="bg-brand-lime text-brand-ink">
-              <Asterisk strokeWidth={3} />
-            </IconTile>
+          <div className="flex min-w-0 items-center">
             <div className="hidden leading-tight sm:block">
-              <p className="font-display text-[17px] font-bold tracking-tight text-brand-text">
+              <p className="font-display text-[19px] font-bold tracking-tight text-brand-text">
                 MOQZUNO<sup className="ml-0.5 text-[8px]">®</sup>
               </p>
               <p className="text-[11px] text-muted-foreground">Make it look unreal.</p>
