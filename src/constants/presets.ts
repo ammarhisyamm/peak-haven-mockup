@@ -2,9 +2,9 @@
  * Packaging preset catalogue. All dimensions are in millimeters.
  */
 
-export type PackagingCategory = 'box' | 'bottle' | 'label';
+export type PackagingCategory = 'box' | 'bottle' | 'set' | 'label';
 
-export type ModelKind = 'tuck-end' | 'mailer' | 'dropper' | 'serum' | 'jar' | 'label';
+export type ModelKind = 'tuck-end' | 'mailer' | 'dropper' | 'serum' | 'jar' | 'vial' | 'vial-set' | 'label';
 
 export interface BoxDimensions {
   width: number;
@@ -31,7 +31,7 @@ export interface BoxPreset extends PresetBase {
 
 export interface BottlePreset extends PresetBase {
   category: 'bottle';
-  kind: 'dropper' | 'serum' | 'jar';
+  kind: 'dropper' | 'serum' | 'jar' | 'vial';
   dimensions: CylinderDimensions;
 }
 
@@ -41,7 +41,14 @@ export interface LabelPreset extends PresetBase {
   dimensions: BoxDimensions;
 }
 
-export type PackagingPreset = BoxPreset | BottlePreset | LabelPreset;
+/** A carton standing next to the vial it holds (box on the left, vial on the right). */
+export interface SetPreset extends PresetBase {
+  category: 'set';
+  kind: 'vial-set';
+  dimensions: { box: BoxDimensions; vial: CylinderDimensions };
+}
+
+export type PackagingPreset = BoxPreset | BottlePreset | SetPreset | LabelPreset;
 
 /** Scene scale: 1 Three.js world unit = 50 mm. */
 export const MM_PER_UNIT = 50;
@@ -106,6 +113,48 @@ export const PRESETS: PackagingPreset[] = [
     kind: 'jar',
     dimensions: { diameter: 55, height: 40 },
   },
+  {
+    id: 'V03',
+    name: 'Vial V03 (3ml)',
+    description: 'Clear glass vial with aluminium crimp cap',
+    category: 'bottle',
+    kind: 'vial',
+    dimensions: { diameter: 17, height: 40 },
+  },
+  {
+    id: 'V05',
+    name: 'Vial V05 (5ml)',
+    description: 'Clear glass vial with aluminium crimp cap',
+    category: 'bottle',
+    kind: 'vial',
+    dimensions: { diameter: 22, height: 48 },
+  },
+  {
+    id: 'V10',
+    name: 'Vial V10 (10ml)',
+    description: 'Clear glass vial with aluminium crimp cap',
+    category: 'bottle',
+    kind: 'vial',
+    dimensions: { diameter: 24, height: 58 },
+  },
+
+  // Vial + box sets
+  {
+    id: 'S03',
+    name: 'Set S03 (3ml Vial + Box)',
+    description: 'Tuck-end carton with its glass vial',
+    category: 'set',
+    kind: 'vial-set',
+    dimensions: { box: { width: 22, height: 58, depth: 22 }, vial: { diameter: 17, height: 40 } },
+  },
+  {
+    id: 'S10',
+    name: 'Set S10 (10ml Vial + Box)',
+    description: 'Tuck-end carton with its glass vial',
+    category: 'set',
+    kind: 'vial-set',
+    dimensions: { box: { width: 32, height: 80, depth: 32 }, vial: { diameter: 24, height: 58 } },
+  },
 
   // Labels / stickers (thin box mesh)
   {
@@ -139,13 +188,15 @@ export const DEFAULT_PRESET_ID = 'B034';
 /** Default preset for each category, used when switching category tabs. */
 export const CATEGORY_DEFAULTS: Record<PackagingCategory, string> = {
   box: 'B034',
-  bottle: 'D010',
+  bottle: 'V10',
+  set: 'S10',
   label: 'L01',
 };
 
 export const CATEGORY_LABELS: Record<PackagingCategory, string> = {
   box: 'Boxes',
-  bottle: 'Bottles & Jars',
+  bottle: 'Bottles & Vials',
+  set: 'Vial + Box',
   label: 'Labels',
 };
 
@@ -159,6 +210,10 @@ export function formatDimensions(preset: PackagingPreset): string {
     const { diameter, height } = preset.dimensions;
     return `Ø${diameter} × ${height} mm`;
   }
+  if (preset.category === 'set') {
+    const { box, vial } = preset.dimensions;
+    return `Box ${box.width} × ${box.height} × ${box.depth} · Vial Ø${vial.diameter} × ${vial.height} mm`;
+  }
   const { width, height, depth } = preset.dimensions;
   return `${width} × ${height} × ${depth} mm`;
 }
@@ -167,13 +222,14 @@ export function formatDimensions(preset: PackagingPreset): string {
 /* Artwork faces                                                      */
 /* ------------------------------------------------------------------ */
 
-export type FaceKey = 'right' | 'left' | 'top' | 'bottom' | 'front' | 'back';
+/** Box faces, plus `label` for the vial in a vial + box set. */
+export type FaceKey = 'right' | 'left' | 'top' | 'bottom' | 'front' | 'back' | 'label';
 
 /** Three.js BoxGeometry material order: [+X, -X, +Y, -Y, +Z, -Z]. */
-export const BOX_FACE_ORDER: FaceKey[] = ['right', 'left', 'top', 'bottom', 'front', 'back'];
+export const BOX_FACE_ORDER: Exclude<FaceKey, 'label'>[] = ['right', 'left', 'top', 'bottom', 'front', 'back'];
 
 /** Order the faces are listed in the inspector UI. */
-export const FACE_UI_ORDER: FaceKey[] = ['front', 'back', 'left', 'right', 'top', 'bottom'];
+export const FACE_UI_ORDER: Exclude<FaceKey, 'label'>[] = ['front', 'back', 'left', 'right', 'top', 'bottom'];
 
 export const FACE_LABELS: Record<FaceKey, string> = {
   right: 'Right (+X)',
@@ -182,11 +238,14 @@ export const FACE_LABELS: Record<FaceKey, string> = {
   bottom: 'Bottom (−Y)',
   front: 'Front (+Z)',
   back: 'Back (−Z)',
+  label: 'Vial label',
 };
 
 /** Faces that accept artwork for a given category. */
 export function facesForCategory(category: PackagingCategory): FaceKey[] {
-  return category === 'box' ? FACE_UI_ORDER : ['front'];
+  if (category === 'box') return FACE_UI_ORDER;
+  if (category === 'set') return ['label', ...FACE_UI_ORDER];
+  return ['front'];
 }
 
 /** Map of face → object URL of the uploaded image (null when empty). */
@@ -199,6 +258,7 @@ export const EMPTY_ARTWORK: ArtworkMap = {
   bottom: null,
   front: null,
   back: null,
+  label: null,
 };
 
 /* ------------------------------------------------------------------ */

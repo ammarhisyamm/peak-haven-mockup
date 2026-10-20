@@ -82,7 +82,10 @@ function CameraRig({
 }
 
 /** Swallows render errors from optional scene pieces (e.g. a failed HDR download). */
-class SilentBoundary extends Component<{ children: React.ReactNode }, { failed: boolean }> {
+class SilentBoundary extends Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { failed: boolean }
+> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -91,7 +94,7 @@ class SilentBoundary extends Component<{ children: React.ReactNode }, { failed: 
     console.warn('Environment map unavailable, falling back to direct lighting.', error);
   }
   render() {
-    return this.state.failed ? null : this.props.children;
+    return this.state.failed ? (this.props.fallback ?? null) : this.props.children;
   }
 }
 
@@ -163,7 +166,7 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
       <directionalLight position={[-4, 2.5, -2]} intensity={0.45} />
 
       {/* The HDR is fetched from a CDN; if that fails the scene keeps its direct lights instead of crashing. */}
-      <SilentBoundary>
+      <SilentBoundary fallback={<hemisphereLight args={['#ffffff', '#cbd5e1', 1.1]} />}>
         <Suspense fallback={null}>
           <Environment preset="city" />
         </Suspense>

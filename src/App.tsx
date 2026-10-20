@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import {
   Box,
+  Boxes,
   Download,
   FlaskConical,
+  Image,
   ImagePlus,
   Layers,
   Loader2,
@@ -36,10 +38,12 @@ import {
 const CATEGORY_ICONS: Record<PackagingCategory, LucideIcon> = {
   box: Package,
   bottle: FlaskConical,
+  set: Boxes,
   label: Tag,
 };
 
-const CATEGORIES: PackagingCategory[] = ['box', 'bottle', 'label'];
+const CATEGORIES: PackagingCategory[] = ['box', 'bottle', 'set', 'label'];
+const BACKGROUND_SWATCHES = ['#cfe3fb', '#e5e7eb', '#f5f5f4', '#0f172a'];
 const FINISH_ORDER: FinishId[] = ['matte', 'glossy', 'kraft'];
 const EXPORT_LONG_EDGE = 3840;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -51,6 +55,8 @@ export default function App() {
   const [finish, setFinish] = useState<FinishId>('matte');
   const [baseColor, setBaseColor] = useState(DEFAULT_BASE_COLOR);
   const [hexDraft, setHexDraft] = useState(DEFAULT_BASE_COLOR);
+  const [transparentBg, setTransparentBg] = useState(true);
+  const [bgColor, setBgColor] = useState(BACKGROUND_SWATCHES[0]);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +119,7 @@ export default function App() {
     try {
       const dataUrl = viewport.capturePNG(EXPORT_LONG_EDGE);
       if (!dataUrl) throw new Error('The 3D viewport is not ready yet.');
-      const blob = await (await fetch(dataUrl)).blob();
+      const blob = transparentBg ? await (await fetch(dataUrl)).blob() : await flattenOnColor(dataUrl, bgColor);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -127,7 +133,7 @@ export default function App() {
     } finally {
       setIsExporting(false);
     }
-  }, [preset.id]);
+  }, [preset.id, transparentBg, bgColor]);
 
   const uploadedCount = faces.filter((f) => artwork[f]).length;
   const CategoryIcon = CATEGORY_ICONS[preset.category];
@@ -135,7 +141,10 @@ export default function App() {
   return (
     <div className="flex h-full flex-col lg:flex-row">
       {/* ---------------- Viewport (70%) ---------------- */}
-      <main className="relative h-[60vh] shrink-0 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 lg:h-full lg:w-[70%]">
+      <main
+        className="relative h-[60vh] shrink-0 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 lg:h-full lg:w-[70%]"
+        style={transparentBg ? undefined : { background: bgColor }}
+      >
         <SceneViewport
           ref={viewportRef}
           preset={preset}
@@ -186,7 +195,7 @@ export default function App() {
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           {/* Category + preset */}
           <Section icon={Package} title="Packaging">
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
               {CATEGORIES.map((category) => {
                 const Icon = CATEGORY_ICONS[category];
                 const active = preset.category === category;
@@ -195,7 +204,7 @@ export default function App() {
                     key={category}
                     type="button"
                     onClick={() => selectCategory(category)}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition ${
+                    className={`flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-center text-[11px] font-medium leading-tight transition ${
                       active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
@@ -244,18 +253,14 @@ export default function App() {
             }
           >
             <p className="mb-2 text-xs text-slate-500">
-              {preset.category === 'box'
-                ? 'Upload artwork for each face of the box.'
-                : preset.category === 'bottle'
-                  ? 'Artwork wraps around the front of the bottle body.'
-                  : 'Artwork is printed on the front of the sticker.'}
+              {ARTWORK_HINTS[preset.category]}
             </p>
             <ul className="space-y-2">
               {faces.map((face) => (
                 <FaceUploadRow
                   key={face}
                   face={face}
-                  label={preset.category === 'box' ? FACE_LABELS[face] : 'Front artwork'}
+                  label={faceLabel(preset.category, face)}
                   url={artwork[face]}
                   onChange={setFaceArtwork}
                 />
@@ -319,6 +324,56 @@ export default function App() {
                 : 'Applied to surfaces without uploaded artwork.'}
             </p>
           </Section>
+
+          {/* Background */}
+          <Section icon={Image} title="Background">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTransparentBg(true)}
+                aria-pressed={transparentBg}
+                className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                  transparentBg
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                Transparent
+              </button>
+              {BACKGROUND_SWATCHES.map((color) => {
+                const active = !transparentBg && bgColor === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      setBgColor(color);
+                      setTransparentBg(false);
+                    }}
+                    aria-label={`Background ${color}`}
+                    aria-pressed={active}
+                    className={`h-8 w-8 rounded-lg border border-slate-300 transition ${
+                      active ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
+                    }`}
+                    style={{ background: color }}
+                  />
+                );
+              })}
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => {
+                  setBgColor(e.target.value);
+                  setTransparentBg(false);
+                }}
+                className="h-8 w-10 cursor-pointer rounded-lg border border-slate-300 bg-white p-0.5"
+                aria-label="Custom background color"
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-slate-500">
+              {transparentBg ? 'PNG exports with a transparent background.' : 'PNG exports on this solid color.'}
+            </p>
+          </Section>
         </div>
 
         {/* Export */}
@@ -338,11 +393,42 @@ export default function App() {
             {isExporting ? 'Rendering…' : 'Export PNG'}
           </button>
           <p className="text-center text-[11px] text-slate-500">
-            Transparent background · {EXPORT_LONG_EDGE}px long edge · {preset.id}-mockup.png
+            {transparentBg ? 'Transparent background' : 'Solid background'} · {EXPORT_LONG_EDGE}px long edge · {preset.id}-mockup.png
           </p>
         </footer>
       </aside>
     </div>
+  );
+}
+
+const ARTWORK_HINTS: Record<PackagingCategory, string> = {
+  box: 'Upload artwork for each face of the box.',
+  bottle: 'Artwork wraps around the front of the bottle or vial.',
+  set: 'Upload the vial label and the box faces.',
+  label: 'Artwork is printed on the front of the sticker.',
+};
+
+function faceLabel(category: PackagingCategory, face: FaceKey): string {
+  if (category === 'box') return FACE_LABELS[face];
+  if (category === 'set') return face === 'label' ? 'Vial label' : `Box ${FACE_LABELS[face]}`;
+  return category === 'bottle' ? 'Label artwork' : 'Front artwork';
+}
+
+/** Draws a transparent PNG onto a solid color and returns it as a PNG blob. */
+async function flattenOnColor(dataUrl: string, color: string): Promise<Blob> {
+  const img = new window.Image();
+  img.src = dataUrl;
+  await img.decode();
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not prepare the export canvas.');
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Export failed.'))), 'image/png'),
   );
 }
 

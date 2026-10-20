@@ -11,6 +11,7 @@ import {
   type FaceKey,
   type FinishId,
   type PackagingPreset,
+  type SetPreset,
 } from '../constants/presets';
 
 /* ------------------------------------------------------------------ */
@@ -20,6 +21,9 @@ import {
 /** Largest model dimension (world units) is kept inside this range so tiny labels and big mailers both frame well. */
 const MIN_FIT_SIZE = 1.6;
 const MAX_FIT_SIZE = 3.0;
+
+/** Gap between the carton and the vial in a set, as a fraction of the vial diameter. */
+const SET_GAP_RATIO = 0.35;
 
 export interface ModelLayout {
   /** World units per millimeter (1 unit = 50 mm, adjusted by the fit factor). */
@@ -32,6 +36,14 @@ function presetSizeMm(preset: PackagingPreset): [number, number, number] {
   if (preset.category === 'bottle') {
     const { diameter, height } = preset.dimensions;
     return [diameter, height, diameter];
+  }
+  if (preset.category === 'set') {
+    const { box, vial } = preset.dimensions;
+    return [
+      box.width + vial.diameter * SET_GAP_RATIO + vial.diameter,
+      Math.max(box.height, vial.height),
+      Math.max(box.depth, vial.diameter),
+    ];
   }
   const { width, height, depth } = preset.dimensions;
   return [width, height, depth];
@@ -257,17 +269,25 @@ function bottleParts(kind: BottlePreset['kind'], r: number, H: number): BottlePa
       return { bodyHeight: H * 0.76, neckRadius: r * 0.45, shoulder: Math.min(r * 0.4, H * 0.1) };
     case 'jar':
       return { bodyHeight: H * 0.68, neckRadius: r * 0.94, shoulder: Math.min(r * 0.06, H * 0.05) };
+    case 'vial':
+      return { bodyHeight: H * 0.72, neckRadius: r * 0.62, shoulder: Math.min(r * 0.3, H * 0.08) };
   }
 }
 
-/** Bottles & jars: lathe body + cap, with artwork wrapped on the front half of the body. */
+type CapAccent = 'cap' | 'collar' | 'glass' | 'metal';
+
+/**
+ * Bottles, jars and vials: lathe body + cap, with artwork wrapped around the front of the body.
+ * Vials are clear glass with liquid inside, and always show a label band (base color until artwork is added).
+ */
 function BottleMesh({
   preset,
   unitsPerMm,
   textures,
   baseColor,
   finish,
-}: SurfaceProps & { preset: BottlePreset; unitsPerMm: number }) {
+  labelFace = 'front',
+}: SurfaceProps & { preset: BottlePreset; unitsPerMm: number; labelFace?: FaceKey }) {
   const r = (preset.dimensions.diameter / 2) * unitsPerMm;
   const H = preset.dimensions.height * unitsPerMm;
   const { kind } = preset;
@@ -279,7 +299,9 @@ function BottleMesh({
     [r, bodyHeight, neckRadius, shoulder],
   );
 
-  const frontTexture = textures.front ?? null;
+  const isVial = kind === 'vial';
+  const frontTexture = textures[labelFace] ?? null;
+  const showLabel = isVial || frontTexture !== null;
 
   // Label band on the straight part of the body, centered on +Z (theta 0). Its arc follows the
   // artwork's aspect ratio so images aren't stretched; wide artwork wraps further round the bottle.
@@ -287,8 +309,10 @@ function BottleMesh({
   const straightTop = bodyHeight - shoulder;
   const labelHeight = (straightTop - straightBottom) * 0.82;
   const labelY = (straightTop + straightBottom) / 2;
-  const artworkAspect = textureAspect(frontTexture);
-  const labelArc = THREE.MathUtils.clamp((labelHeight * artworkAspect) / r, 0.35, Math.PI * 2 * 0.985);
+  const fullWrap = Math.PI * 2 * 0.985;
+  const labelArc = frontTexture
+    ? THREE.MathUtils.clamp((labelHeight * textureAspect(frontTexture)) / r, 0.35, fullWrap)
+    : fullWrap;
   const labelGeometry = useDisposable(
     () =>
       new THREE.CylinderGeometry(r * 1.004, r * 1.004, labelHeight, 128, 1, true, -labelArc / 2, labelArc),
@@ -297,7 +321,7 @@ function BottleMesh({
 
   // Cap pieces.
   const capGeometries = useDisposable(() => {
-    const parts: { geometry: THREE.BufferGeometry; y: number; accent: 'cap' | 'collar' }[] = [];
+    const parts: { geometry: THREE.BufferGeometry; y: number; accent: CapAccent }[] = [];
     if (kind === 'dropper') {
       const collarH = capHeight * 0.4;
       const bulbR = r * 0.4;
@@ -324,6 +348,26 @@ function BottleMesh({
         geometry: new THREE.CylinderGeometry(capR, capR, capHeight - neckH, 64),
         y: bodyHeight + neckH + (capHeight - neckH) / 2,
         accent: 'cap',
+      });
+    } else if (kind === 'vial') {
+      // Short glass neck, then an aluminium crimp cap with a slightly recessed top.
+      const neckH = capHeight * 0.3;
+      const crimpH = capHeight - neckH;
+      const capR = r * 0.78;
+      parts.push({
+        geometry: new THREE.CylinderGeometry(neckRadius, neckRadius, neckH, 64),
+        y: bodyHeight + neckH / 2,
+        accent: 'glass',
+      });
+      parts.push({
+        geometry: new THREE.CylinderGeometry(capR, capR, crimpH * 0.97, 96),
+        y: bodyHeight + neckH + (crimpH * 0.97) / 2,
+        accent: 'metal',
+      });
+      parts.push({
+        geometry: new THREE.CylinderGeometry(capR * 0.9, capR * 0.9, crimpH * 0.03, 96),
+        y: bodyHeight + neckH + crimpH * 0.97 + (crimpH * 0.03) / 2,
+        accent: 'metal',
       });
     } else {
       const lidR = r * 1.03;
@@ -357,6 +401,49 @@ function BottleMesh({
     () => new THREE.MeshStandardMaterial({ color: '#c8a96a', roughness: 0.25, metalness: 0.85 }),
     [],
   );
+  const aluminiumMaterial = useDisposable(
+    () => new THREE.MeshStandardMaterial({ color: '#d5d9de', roughness: 0.3, metalness: 0.65 }),
+    [],
+  );
+  // Clear glass: transparent rather than transmissive, so exports keep a transparent background.
+  const glassMaterial = useDisposable(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: '#ffffff',
+        roughness: 0.04,
+        metalness: 0,
+        clearcoat: 1,
+        clearcoatRoughness: 0.04,
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        envMapIntensity: 1.6,
+      }),
+    [],
+  );
+  const liquidMaterial = useDisposable(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: '#eaf4ff',
+        roughness: 0.02,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+      }),
+    [],
+  );
+  const liquidHeight = bodyHeight * 0.62;
+  const liquidGeometry = useDisposable(
+    () => new THREE.CylinderGeometry(r * 0.9, r * 0.9, liquidHeight, 64),
+    [r, liquidHeight],
+  );
+  const accentMaterials: Record<CapAccent, THREE.Material> = {
+    cap: capMaterial,
+    collar: collarMaterial,
+    glass: glassMaterial,
+    metal: aluminiumMaterial,
+  };
 
   useEffect(() => {
     applySurface(bodyMaterial, { map: null, baseColor, finish });
@@ -368,16 +455,74 @@ function BottleMesh({
 
   return (
     <group>
-      <mesh geometry={bodyGeometry} material={bodyMaterial} />
-      {frontTexture && <mesh geometry={labelGeometry} material={labelMaterial} position={[0, labelY, 0]} />}
+      {isVial && (
+        <mesh
+          geometry={liquidGeometry}
+          material={liquidMaterial}
+          position={[0, straightBottom + liquidHeight / 2, 0]}
+          renderOrder={1}
+        />
+      )}
+      <mesh geometry={bodyGeometry} material={isVial ? glassMaterial : bodyMaterial} renderOrder={2} />
+      {showLabel && <mesh geometry={labelGeometry} material={labelMaterial} position={[0, labelY, 0]} />}
       {capGeometries.parts.map((part, i) => (
         <mesh
           key={i}
           geometry={part.geometry}
-          material={part.accent === 'collar' ? collarMaterial : capMaterial}
+          material={accentMaterials[part.accent]}
           position={[0, part.y, 0]}
+          renderOrder={part.accent === 'glass' ? 2 : 0}
         />
       ))}
+    </group>
+  );
+}
+
+/** Vial + box set: the carton on the left and its vial on the right, both facing +Z. */
+function VialSetMesh({
+  preset,
+  unitsPerMm,
+  textures,
+  baseColor,
+  finish,
+}: SurfaceProps & { preset: SetPreset; unitsPerMm: number }) {
+  const { box, vial } = preset.dimensions;
+  const totalWidth = box.width + vial.diameter * SET_GAP_RATIO + vial.diameter;
+  const boxX = (-totalWidth / 2 + box.width / 2) * unitsPerMm;
+  const vialX = (totalWidth / 2 - vial.diameter / 2) * unitsPerMm;
+
+  const vialPreset = useMemo<BottlePreset>(
+    () => ({
+      id: `${preset.id}-vial`,
+      name: preset.name,
+      description: preset.description,
+      category: 'bottle',
+      kind: 'vial',
+      dimensions: vial,
+    }),
+    [preset, vial],
+  );
+
+  return (
+    <group>
+      <group position={[boxX, 0, 0]}>
+        <BoxMesh
+          size={[box.width * unitsPerMm, box.height * unitsPerMm, box.depth * unitsPerMm]}
+          textures={textures}
+          baseColor={baseColor}
+          finish={finish}
+        />
+      </group>
+      <group position={[vialX, 0, 0]}>
+        <BottleMesh
+          preset={vialPreset}
+          unitsPerMm={unitsPerMm}
+          textures={textures}
+          baseColor={baseColor}
+          finish={finish}
+          labelFace="label"
+        />
+      </group>
     </group>
   );
 }
@@ -403,6 +548,19 @@ export default function PackagingModel({ preset, artwork, finish, baseColor }: P
     return (
       <BottleMesh
         // Remount on preset change so all per-shape resources are released together.
+        key={preset.id}
+        preset={preset}
+        unitsPerMm={layout.unitsPerMm}
+        textures={textures}
+        baseColor={baseColor}
+        finish={finish}
+      />
+    );
+  }
+
+  if (preset.category === 'set') {
+    return (
+      <VialSetMesh
         key={preset.id}
         preset={preset}
         unitsPerMm={layout.unitsPerMm}
