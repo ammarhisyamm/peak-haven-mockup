@@ -9,7 +9,7 @@ import {
   Loader2,
   Minus,
   MoreHorizontal,
-  Package,
+  Asterisk,
   PanelRightClose,
   PanelRightOpen,
   PenTool,
@@ -166,7 +166,7 @@ export default function App() {
     }
   }, [preset.id, settings]);
 
-  const videoBackground = settings.transparentBg ? '#eef0f3' : settings.bgColor;
+  const videoBackground = settings.transparentBg ? '#151529' : settings.bgColor;
   const recordVideo = useCallback(
     async (mode: VideoMode, seconds: number): Promise<VideoResult> => {
       const viewport = viewportRef.current;
@@ -282,12 +282,14 @@ export default function App() {
       {/* Top bar */}
       <header className="z-20 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-3 md:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Package className="h-4 w-4" strokeWidth={2} />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-lime text-brand-ink">
+            <Asterisk className="h-5 w-5" strokeWidth={3} />
           </div>
           <div className="hidden leading-tight sm:block">
-            <p className="text-sm font-semibold tracking-tight">Peak Haven</p>
-            <p className="text-[11px] text-slate-500">Mockup Studio</p>
+            <p className="font-display text-[17px] font-bold tracking-tight text-brand-lime">
+              MOQZUNO<sup className="ml-0.5 text-[8px]">®</sup>
+            </p>
+            <p className="text-[11px] text-slate-500">Make it look unreal.</p>
           </div>
         </div>
 
@@ -318,7 +320,7 @@ export default function App() {
             type="button"
             onClick={exportImage}
             disabled={isExporting}
-            className="ml-1 flex items-center gap-2 whitespace-nowrap rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70"
+            className="ml-1 flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-lime px-4 py-2 font-display text-sm font-bold text-brand-ink shadow-[0_0_24px_rgba(202,255,92,0.25)] hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-70"
           >
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             <span className="hidden sm:inline">Export {settings.exportFormat.toUpperCase()}</span>
@@ -329,12 +331,12 @@ export default function App() {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {/* Stage */}
         <main
-          className="relative min-h-[50vh] flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_center,_#ffffff_0%,_#eef1f5_55%,_#dfe4ea_100%)]"
+          className="relative min-h-[50vh] flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_40%,_#2a2a52_0%,_#18182e_55%,_#0d0d1d_100%)]"
           style={settings.transparentBg ? undefined : { background: settings.bgColor }}
         >
           {/* Subtle dot grid so the stage reads as a canvas. */}
           {settings.transparentBg && (
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:22px_22px] opacity-50" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#caff5c_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.12]" />
           )}
           <div className="absolute inset-0">
             <SceneViewport
@@ -416,14 +418,14 @@ export default function App() {
       {toast && (
         <div
           role="status"
-          className="fixed left-1/2 top-[68px] z-30 -translate-x-1/2 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
+          className="fixed left-1/2 top-[68px] z-30 -translate-x-1/2 rounded-full bg-brand-lime px-4 py-2 text-sm font-medium text-brand-ink shadow-lg"
         >
           {toast}
         </div>
       )}
 
       {dielineUrl && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={closeDieline}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={closeDieline}>
           <div
             className="flex max-h-full w-full max-w-4xl flex-col rounded-2xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -445,13 +447,13 @@ export default function App() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
+            <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200 bg-brand-canvas p-4">
               <img src={dielineUrl} alt={`${preset.id} dieline`} className="mx-auto max-h-[60vh] w-full object-contain" />
             </div>
             <button
               type="button"
               onClick={downloadDieline}
-              className="mt-4 flex items-center justify-center gap-2 self-end rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+              className="mt-4 flex items-center justify-center gap-2 self-end rounded-full bg-brand-lime px-4 py-2.5 font-display text-sm font-bold text-brand-ink hover:bg-emerald-400"
             >
               <Download className="h-4 w-4" />
               Download SVG

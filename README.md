@@ -1,4 +1,6 @@
-# Peak Haven · 3D Packaging Mockup Generator
+# MOQZUNO · Make it look unreal.
+
+MOQZUNO is a creative mockup & 3D product visualization studio. The UI follows the brand guidelines: Midnight Ink surfaces, Electric Lime accents, Hyper Violet highlights, Space Grotesk headlines and DM Sans body text (theme in `tailwind.config.js`).
 
 Interactive 3D packaging mockups in the browser: pick a box, bottle/jar, glass vial, vial + box set or label preset, upload artwork per face, choose a finish, and export a transparent high-resolution PNG.
 

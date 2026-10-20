@@ -98,7 +98,7 @@ function Polys({ polys }: { polys: Poly[] }) {
   );
 }
 
-const PALETTE = { body: '#cbd5e1', front: '#38bdf8' };
+const PALETTE = { body: '#b9b9d6', front: '#7657ff' };
 
 export function LayoutThumb({ layout }: { layout: LayoutDef }) {
   const polys = useMemo(() => {
@@ -126,7 +126,7 @@ function BottleShape({ kind, x, w, h }: { kind: string; x: number; w: number; h:
   return (
     <g>
       <rect x={x - w / 2} y={92 - bodyH} width={w} height={bodyH} rx={Math.min(w * 0.18, 6)} fill={kind === 'vial' ? '#e0f2fe' : '#f1f5f9'} stroke="#cbd5e1" strokeWidth={0.8} />
-      <rect x={x - w / 2 + 0.5} y={92 - bodyH * 0.78} width={w - 1} height={bodyH * 0.5} fill="#38bdf8" opacity={0.85} />
+      <rect x={x - w / 2 + 0.5} y={92 - bodyH * 0.78} width={w - 1} height={bodyH * 0.5} fill="#caff5c" opacity={0.9} />
       {kind === 'dropper' ? (
         <>
           <rect x={x - capW / 2} y={92 - bodyH - (h - bodyH) * 0.4} width={capW} height={(h - bodyH) * 0.4} fill="#c8a96a" />
@@ -139,7 +139,7 @@ function BottleShape({ kind, x, w, h }: { kind: string; x: number; w: number; h:
   );
 }
 
-const ACCENT = '#38bdf8';
+const ACCENT = '#caff5c';
 
 function matFill(mat: MatName, color: string): string {
   switch (mat) {
@@ -313,7 +313,7 @@ export function ModelThumb({ preset }: { preset: PackagingPreset }) {
       const s = 70 / Math.max(width, height);
       return (
         <g transform="rotate(-8 50 50)">
-          <rect x={50 - (width * s) / 2} y={50 - (height * s) / 2} width={width * s} height={height * s} rx={2} fill="#38bdf8" />
+          <rect x={50 - (width * s) / 2} y={50 - (height * s) / 2} width={width * s} height={height * s} rx={2} fill="#caff5c" />
           <rect x={50 - (width * s) / 2 + 4} y={50 - 3} width={width * s * 0.5} height={3} rx={1} fill="#ffffff" opacity={0.8} />
         </g>
       );

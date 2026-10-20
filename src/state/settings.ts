@@ -29,7 +29,8 @@ export interface ViewSettings {
   unit: Unit;
 }
 
-export const BACKGROUND_SWATCHES = ['#e5e7eb', '#cfe3fb', '#f5f5f4', '#fde68a', '#0f172a'];
+/** MOQZUNO palette: Midnight Ink, Electric Lime, Hyper Violet, Soft Canvas, Pop Coral, Pure White. */
+export const BACKGROUND_SWATCHES = ['#151529', '#caff5c', '#7657ff', '#f5f3ee', '#ff7868', '#ffffff'];
 
 export const DEFAULT_SETTINGS: ViewSettings = {
   transparentBg: true,

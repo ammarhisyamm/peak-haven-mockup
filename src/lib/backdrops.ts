@@ -281,7 +281,91 @@ const PATTERNS = {
 /* Catalogue                                                          */
 /* ------------------------------------------------------------------ */
 
+/** MOQZUNO signature backgrounds: ink with violet and lime glows, and the brand's graphic patterns. */
+function brandGlow(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = '#0d0d1d';
+  ctx.fillRect(0, 0, w, h);
+  const glow = (x: number, y: number, r: number, color: string) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, 'rgba(13,13,29,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  };
+  glow(w * 0.22, h * 0.25, h * 0.75, 'rgba(118,87,255,0.55)');
+  glow(w * 0.82, h * 0.78, h * 0.6, 'rgba(202,255,92,0.28)');
+  glow(w * 0.5, h * 0.45, h * 0.5, 'rgba(37,37,72,0.6)');
+}
+
+function brandSquiggle(bg: string, ink: string, width: number) {
+  return pattern(bg, (ctx, w, h, u) => {
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = width * u;
+    ctx.lineCap = 'round';
+    const step = 120 * u;
+    for (let y = -step; y < h + step; y += step) {
+      ctx.beginPath();
+      for (let x = -20 * u; x <= w + 20 * u; x += 6 * u) {
+        const yy = y + Math.sin((x / (180 * u)) * Math.PI * 2) * 34 * u + Math.sin(x / (61 * u)) * 8 * u;
+        if (x <= -20 * u) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+  });
+}
+
+function sparkles(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = '#0d0d1d';
+  ctx.fillRect(0, 0, w, h);
+  const u = h / 1000;
+  const step = 110 * u;
+  ctx.strokeStyle = 'rgba(202,255,92,0.08)';
+  ctx.lineWidth = 1.5 * u;
+  for (let x = 0; x < w; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#caff5c';
+  for (let y = step; y < h; y += step * 2) {
+    for (let x = step; x < w; x += step * 2) {
+      const s = 12 * u;
+      ctx.beginPath();
+      ctx.moveTo(x, y - s);
+      ctx.quadraticCurveTo(x, y, x + s, y);
+      ctx.quadraticCurveTo(x, y, x, y + s);
+      ctx.quadraticCurveTo(x, y, x - s, y);
+      ctx.quadraticCurveTo(x, y, x, y - s);
+      ctx.fill();
+    }
+  }
+  vignette(ctx, w, h, 0.35);
+}
+
 export const BACKDROPS: Backdrop[] = [
+  // MOQZUNO signature
+  { id: 'g-moqzuno', label: 'Moqzuno glow', kind: 'gradient', draw: brandGlow },
+  { id: 'p-moqzuno-lime', label: 'Lime squiggle', kind: 'pattern', draw: brandSquiggle('#151529', '#caff5c', 34) },
+  { id: 'p-moqzuno-violet', label: 'Violet flow', kind: 'pattern', draw: brandSquiggle('#0d0d1d', '#7657ff', 52) },
+  { id: 'p-moqzuno-spark', label: 'Sparkle grid', kind: 'pattern', draw: sparkles },
+  {
+    id: 's-moqzuno',
+    label: 'Moqzuno stage',
+    kind: 'scene',
+    draw: brandGlow,
+    floor: { id: 'plain', color: '#1d1d38', tile: 4, roughness: 0.35 },
+    fog: '#121226',
+    podium: { colors: ['#2a2a4d', '#7657ff'] },
+  },
+
   // Gradients
   { id: 'g-studio', label: 'Soft studio', kind: 'gradient', draw: radial('#ffffff', '#cfd6df') },
   { id: 'g-peach', label: 'Peach', kind: 'gradient', draw: linear(['#ffe8d6', '#ffb4a2'], 70) },

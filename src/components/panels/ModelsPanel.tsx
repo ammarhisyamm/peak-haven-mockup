@@ -95,7 +95,7 @@ export default function ModelsPanel({
                 }}
                 className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition ${
                   filter === f
-                    ? 'border-slate-900 bg-slate-900 text-white'
+                    ? 'border-brand-violet bg-brand-violet text-slate-950'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -132,7 +132,7 @@ export default function ModelsPanel({
                     active ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div className="aspect-square rounded-lg bg-gradient-to-b from-slate-50 to-slate-100 p-2">
+                  <div className="aspect-square rounded-lg bg-gradient-to-b from-slate-100 to-brand-deep p-2">
                     <ModelThumb preset={p} />
                   </div>
                   <p className="mt-1.5 truncate text-xs font-medium text-slate-800">{p.name}</p>

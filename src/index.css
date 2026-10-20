@@ -9,5 +9,12 @@ body,
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  @apply bg-brand-ink text-slate-900 antialiased;
+  color-scheme: dark;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-display;
 }
