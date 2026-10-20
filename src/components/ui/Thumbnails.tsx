@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { placeInstances, type LayoutDef } from '../../constants/layouts';
-import type { PackagingPreset } from '../../constants/presets';
+import { presetBoundsMm, type ObjectPreset, type PackagingPreset } from '../../constants/presets';
+import { GARMENT_PRINT, GARMENT_SHAPES, LATHE_SPECS, isGarment, isLathe, type MatName } from '../../lib/objectSpecs';
 
 /**
  * Lightweight SVG previews for the model library and layout picker. Boxes are projected
@@ -138,8 +139,166 @@ function BottleShape({ kind, x, w, h }: { kind: string; x: number; w: number; h:
   );
 }
 
+const ACCENT = '#38bdf8';
+
+function matFill(mat: MatName, color: string): string {
+  switch (mat) {
+    case 'glass':
+    case 'clear':
+      return '#e0f2fe';
+    case 'glassGreen':
+      return '#2f6b44';
+    case 'glassAmber':
+      return '#92501d';
+    case 'cap':
+    case 'dark':
+    case 'screen':
+      return '#1f2937';
+    case 'white':
+    case 'paper':
+      return '#f8fafc';
+    case 'metal':
+      return '#cbd5e1';
+    case 'gold':
+      return '#c8a96a';
+    case 'cork':
+    case 'wood':
+      return '#b08654';
+    default:
+      return color;
+  }
+}
+
+/** Library preview for generic objects, drawn from the same shape data as the 3D model. */
+function ObjectThumb({ preset }: { preset: ObjectPreset }) {
+  const color = preset.defaultColor ?? '#cbd5e1';
+  const { kind } = preset;
+  const { width, height } = preset.dimensions;
+  const stroke = { stroke: '#94a3b8', strokeWidth: 0.6 };
+
+  if (isLathe(kind)) {
+    const spec = LATHE_SPECS[kind];
+    const extraW = spec.extras?.includes('mug-handle') ? 1.45 : 1;
+    const s = 76 / Math.max(height, width * extraW);
+    const r = (width / 2) * s;
+    const H = height * s;
+    const cx = 50 - (extraW - 1) * r * 0.5;
+    const base = 50 + H / 2;
+    const poly = (pts: [number, number][]) =>
+      [...pts.map(([x, y]) => `${cx + x * r},${base - y * H}`), ...[...pts].reverse().map(([x, y]) => `${cx - x * r},${base - y * H}`)].join(' ');
+    return (
+      <>
+        {spec.extras?.includes('mug-handle') && (
+          <path d={`M ${cx + r} ${base - H * 0.78} a ${H * 0.27} ${H * 0.27} 0 0 1 0 ${H * 0.54}`} fill="none" stroke={color} strokeWidth={H * 0.09} />
+        )}
+        {spec.parts.map((p, i) => (
+          <polygon key={i} points={poly(p.pts)} fill={p.mat === 'liquid' || p.mat === 'wax' ? color : matFill(p.mat, color)} opacity={p.mat === 'glass' || p.mat === 'clear' ? 0.7 : 1} {...stroke} />
+        ))}
+        {spec.label && (
+          <polygon
+            points={`${cx - spec.label.r0 * r},${base - spec.label.y0 * H} ${cx + spec.label.r0 * r},${base - spec.label.y0 * H} ${cx + spec.label.r1 * r},${base - spec.label.y1 * H} ${cx - spec.label.r1 * r},${base - spec.label.y1 * H}`}
+            fill={ACCENT}
+            opacity={0.9}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (isGarment(kind)) {
+    const s = 80 / Math.max(width, height);
+    const w = width * s;
+    const h = height * s;
+    const pts = GARMENT_SHAPES[kind].map(([x, y]) => `${50 + x * w},${50 + h / 2 - y * h}`).join(' ');
+    const pr = GARMENT_PRINT[kind];
+    return (
+      <>
+        <polygon points={pts} fill={color} {...stroke} strokeLinejoin="round" />
+        <rect x={50 + pr.x * w - (pr.w * w) / 2} y={50 + h / 2 - pr.y * h - (pr.h * h) / 2} width={pr.w * w} height={pr.h * h} rx={1} fill={ACCENT} />
+      </>
+    );
+  }
+
+  switch (kind) {
+    case 'phone':
+    case 'phone-case':
+    case 'tablet':
+    case 'watch': {
+      const s = 70 / Math.max(width, height);
+      const w = width * s;
+      const h = height * s;
+      return (
+        <>
+          {kind === 'watch' && <rect x={50 - w * 0.4} y={50 - h * 1.1} width={w * 0.8} height={h * 2.2} rx={w * 0.1} fill={color} />}
+          <rect x={50 - w / 2} y={50 - h / 2} width={w} height={h} rx={w * 0.16} fill={kind === 'phone-case' ? color : '#1f2937'} />
+          <rect x={50 - w / 2 + w * 0.06} y={50 - h / 2 + w * 0.06} width={w * 0.88} height={h - w * 0.12} rx={w * 0.12} fill={ACCENT} />
+        </>
+      );
+    }
+    case 'hat':
+      return (
+        <>
+          <path d="M 18 66 Q 20 26 52 24 Q 82 26 84 62 Z" fill={color} />
+          <path d="M 14 64 Q 6 76 40 74 L 86 64 Z" fill={color} opacity={0.85} />
+          <rect x={40} y={38} width={20} height={12} rx={2} fill={ACCENT} />
+        </>
+      );
+    case 'flag':
+      return (
+        <>
+          <rect x={20} y={10} width={2.5} height={82} fill="#94a3b8" />
+          <path d="M 22 14 Q 45 8 58 16 T 88 16 L 88 50 Q 72 44 58 52 T 22 48 Z" fill={ACCENT} />
+        </>
+      );
+    case 'pouch':
+    case 'chip-bag':
+      return (
+        <>
+          <path d="M 26 14 L 74 14 L 74 20 Q 80 50 76 86 L 24 86 Q 20 50 26 20 Z" fill={color === '#cbd5e1' ? '#e2e8f0' : color} {...stroke} />
+          <rect x={34} y={36} width={32} height={30} rx={3} fill={ACCENT} />
+        </>
+      );
+    case 'lanyard':
+      return (
+        <>
+          <path d="M 50 50 L 34 10 M 50 50 L 66 10" stroke={color} strokeWidth={4} fill="none" />
+          <rect x={38} y={50} width={24} height={38} rx={3} fill="#f8fafc" {...stroke} />
+          <rect x={41} y={56} width={18} height={18} rx={2} fill={ACCENT} />
+        </>
+      );
+    case 'frame':
+    case 'poster':
+    case 'banner':
+    case 'billboard': {
+      const s = 72 / Math.max(width, height * (kind === 'billboard' ? 1.9 : 1));
+      const w = width * s;
+      const h = height * s;
+      const top = kind === 'billboard' ? 12 : 50 - h / 2;
+      return (
+        <>
+          {kind === 'billboard' && <rect x={48} y={top + h} width={4} height={86 - top - h} fill="#94a3b8" />}
+          {kind === 'banner' && <rect x={50 - w * 0.55} y={top + h - 2} width={w * 1.1} height={4} rx={1} fill="#94a3b8" />}
+          <rect x={50 - w / 2} y={top} width={w} height={h} fill={kind === 'frame' ? color : '#1f2937'} />
+          <rect x={50 - w / 2 + w * 0.08} y={top + w * 0.08} width={w * 0.84} height={h - w * 0.16} fill={ACCENT} />
+        </>
+      );
+    }
+    default: {
+      const [bx, by, bz] = presetBoundsMm(preset);
+      const flat = by < Math.min(bx, bz) * 0.2;
+      const polys = projectBoxes(
+        [{ size: [bx, Math.max(by, 0.02 * Math.max(bx, bz)), bz], position: [0, 0, 0], rotation: [0, 0, 0] }],
+        flat ? [0.4, 1.4, 1] : [0.75, 0.6, 1.6],
+        { body: color, front: ACCENT },
+      );
+      return <Polys polys={polys} />;
+    }
+  }
+}
+
 export function ModelThumb({ preset }: { preset: PackagingPreset }) {
   const content = useMemo(() => {
+    if (preset.category === 'object') return <ObjectThumb preset={preset} />;
     if (preset.category === 'box') {
       const { width, height, depth } = preset.dimensions;
       const polys = projectBoxes(

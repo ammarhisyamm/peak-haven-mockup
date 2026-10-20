@@ -7,6 +7,7 @@ import {
   MM_PER_UNIT,
   boardThickness,
   facesForCategory,
+  presetBoundsMm,
   type ArtworkMap,
   type BottlePreset,
   type BoxFace,
@@ -18,6 +19,7 @@ import {
 import { buildDieline, sliceDielineTexture } from '../lib/dieline';
 import { getGrainTextures } from '../lib/paperTexture';
 import { FULL_WRAP, bottleParts, labelBand } from '../lib/shapes';
+import { ObjectMesh } from './ObjectModels';
 
 /* ------------------------------------------------------------------ */
 /* Layout / scaling                                                   */
@@ -40,25 +42,8 @@ export interface ModelLayout {
   size: [number, number, number];
 }
 
-function presetSizeMm(preset: PackagingPreset): [number, number, number] {
-  if (preset.category === 'bottle') {
-    const { diameter, height } = preset.dimensions;
-    return [diameter, height, diameter];
-  }
-  if (preset.category === 'set') {
-    const { box, vial } = preset.dimensions;
-    return [
-      box.width + vial.diameter * SET_GAP_RATIO + vial.diameter,
-      Math.max(box.height, vial.height),
-      Math.max(box.depth, vial.diameter),
-    ];
-  }
-  const { width, height, depth } = preset.dimensions;
-  return [width, height, depth];
-}
-
 export function getModelLayout(preset: PackagingPreset): ModelLayout {
-  const sizeMm = presetSizeMm(preset);
+  const sizeMm = presetBoundsMm(preset);
   const baseUnitsPerMm = 1 / MM_PER_UNIT;
   const maxDim = Math.max(...sizeMm) * baseUnitsPerMm;
   const fit = THREE.MathUtils.clamp(maxDim, MIN_FIT_SIZE, MAX_FIT_SIZE) / maxDim;
@@ -615,6 +600,8 @@ function VialSetMesh({
       id: `${preset.id}-vial`,
       name: preset.name,
       description: preset.description,
+      group: preset.group,
+      type: preset.type,
       category: 'bottle',
       kind: 'vial',
       dimensions: vial,
@@ -676,6 +663,11 @@ export default function PackagingModel({ preset, textures, finish, baseColor, op
       );
     case 'label':
       return <LabelMesh key={preset.id} size={layout.size} {...surface} />;
+    case 'object': {
+      const { width, height, depth } = preset.dimensions;
+      const k = layout.unitsPerMm;
+      return <ObjectMesh key={preset.id} kind={preset.kind} size={[width * k, height * k, depth * k]} {...surface} />;
+    }
     case 'box':
       return (
         <PanelBox

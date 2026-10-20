@@ -16,7 +16,8 @@ npm run preview    # serve the production build
 ## Editor
 
 - **Edit**: upload one full dieline design (split onto every face automatically) or per-face artwork, pick a material (Matte, Glossy, Kraft, Corrugated, Metallic), base color, custom size, and download the dieline template as SVG.
-- **Models**: searchable library (boxes, mailers, bottles, vials, vial + box sets, labels), saved projects (stored in this browser with artwork), custom size in mm or inches.
+- **Models**: 100 models in groups like Pacdora: Boxes (tuck end, mailer, gift, window, handle, hanging, hexagon, clear, sleeve & tray, display), Bottles (water, wine, beer, perfume, shampoo, spray, pump, dropper, jerry can...), Food Packaging (pouch, chip bag, can, tin, takeout, paper bag), Containers & Cups & Bowls, Apparel (T-shirt, hoodie, polo, cap, pants, apron, tote), Devices (phone, laptop, tablet, watch, phone case), Prints (book, magazine, brochure, notebook, calendar, poster, paper, card, envelope, folder), Others (lanyard, banner, flag, frame, bucket, barrel, billboard, sign, insert, candle), plus vial sets and labels. Search, group and sub-type filters, saved projects, custom size in mm or inches.
+- **Scene**: transparent or solid color, gradients, patterns (dots, blueprint, stripes, checker, waves, confetti, terrazzo, sunburst, memphis) and realistic scenes (wooden table, marble, concrete, linen, beach, terrazzo floor, podiums, studio sweep, dark studio). All procedural, included in exports and videos.
 - **Layout**: single, duo, trio, front & back, standing + lying, stack, fan and flat lay arrangements.
 - **Video**: record a 360° spin or open/close animation (MP4 or WebM, 4 to 12 s).
 - **More**: background color or transparent, lighting environment, brightness, shadows, auto-rotate, export size (1080 to 6K), PNG/JPG, units.
@@ -29,6 +30,8 @@ npm run preview    # serve the production build
 | --- | --- |
 | `src/constants/presets.ts` | Preset catalogue (mm), face order, finishes, units |
 | `src/constants/layouts.ts` | Multi-instance layouts and their placement solver |
+| `src/lib/objectSpecs.ts`, `src/components/ObjectModels.tsx` | Shape data and builders for the generic models |
+| `src/lib/backdrops.ts`, `src/components/SceneBackdrop.tsx` | Gradients, patterns, floors, podiums and studio sweep |
 | `src/lib/dieline.ts` | Dieline nets, SVG output, slicing a full design onto faces |
 | `src/lib/projects.ts` | Saved projects in IndexedDB |
 | `src/state/editor.ts` | Document state with undo/redo history |

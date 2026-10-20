@@ -70,6 +70,8 @@ export default function EditPanel({
             ? 'Full dieline artwork. Use the template below so every panel lines up.'
             : preset.category === 'bottle'
               ? 'Label artwork. It wraps around the front of the body.'
+              : preset.category === 'object'
+                ? 'Front artwork (label, print or screen). Add a back design below.'
               : 'Sticker artwork, printed on the front.'
         }
         onFile={(f) => onUpload(mainFace, f)}
@@ -83,6 +85,12 @@ export default function EditPanel({
         <Download className="h-4 w-4" />
         Download dieline (SVG)
       </button>
+
+      {preset.category === 'object' && (
+        <ul className="mt-4 space-y-2">
+          <FaceUploadRow face="back" label="Back design" url={artwork.back} onChange={onUpload} />
+        </ul>
+      )}
 
       {multiFace && (
         <>

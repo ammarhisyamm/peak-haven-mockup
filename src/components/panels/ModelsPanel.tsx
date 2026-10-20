@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FolderOpen, Loader2, Save, Search, Trash2 } from 'lucide-react';
 import {
-  CATEGORY_LABELS,
+  LIBRARY_GROUPS,
   PRESETS,
+  type LibraryGroup,
   formatDimensions,
-  type PackagingCategory,
   type PackagingPreset,
   type SizeOverride,
   type Unit,
@@ -14,9 +14,17 @@ import { ModelThumb } from '../ui/Thumbnails';
 import { Segmented, SizeEditor } from '../ui/controls';
 
 type Tab = 'library' | 'projects' | 'custom';
-type Filter = 'all' | PackagingCategory;
+type Filter = 'all' | LibraryGroup;
 
-const FILTERS: Filter[] = ['all', 'box', 'bottle', 'set', 'label'];
+/** Sub-types of each group, in catalogue order. */
+const TYPES_BY_GROUP = PRESETS.reduce(
+  (acc, p) => {
+    const list = (acc[p.group] ??= []);
+    if (!list.includes(p.type)) list.push(p.type);
+    return acc;
+  },
+  {} as Partial<Record<LibraryGroup, string[]>>,
+);
 
 export default function ModelsPanel({
   preset,
@@ -40,14 +48,18 @@ export default function ModelsPanel({
   const [tab, setTab] = useState<Tab>('library');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [type, setType] = useState<string | null>(null);
 
   const results = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    return PRESETS.filter((p) => filter === 'all' || p.category === filter).filter((p) => {
-      const haystack = `${p.id} ${p.name} ${p.description} ${p.kind} ${CATEGORY_LABELS[p.category]}`.toLowerCase();
-      return words.every((w) => haystack.includes(w));
-    });
-  }, [query, filter]);
+    return PRESETS.filter((p) => filter === 'all' || p.group === filter)
+      .filter((p) => !type || p.type === type)
+      .filter((p) => {
+        const haystack = `${p.id} ${p.name} ${p.description} ${p.kind} ${p.group} ${p.type}`.toLowerCase();
+        return words.every((w) => haystack.includes(w));
+      });
+  }, [query, filter, type]);
+  const types = filter === 'all' ? [] : (TYPES_BY_GROUP[filter] ?? []);
 
   return (
     <div>
@@ -73,22 +85,42 @@ export default function ModelsPanel({
             />
           </label>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {FILTERS.map((f) => (
+            {(['all', ...LIBRARY_GROUPS] as Filter[]).map((f) => (
               <button
                 key={f}
                 type="button"
-                onClick={() => setFilter(f)}
-                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                onClick={() => {
+                  setFilter(f);
+                  setType(null);
+                }}
+                className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition ${
                   filter === f
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    ? 'border-slate-900 bg-slate-900 text-white'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                {f === 'all' ? 'All' : CATEGORY_LABELS[f]}
+                {f === 'all' ? 'All' : f}
               </button>
             ))}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
+          {types.length > 1 && (
+            <div className="mt-2 flex flex-wrap gap-x-1 gap-y-1">
+              {types.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType((cur) => (cur === t ? null : t))}
+                  className={`rounded-md px-2 py-1 text-xs transition ${
+                    type === t ? 'bg-emerald-50 font-medium text-emerald-700' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="mt-3 text-[11px] text-slate-500">{results.length} models</p>
+          <div className="mt-1.5 grid grid-cols-2 gap-2.5">
             {results.map((p) => {
               const active = p.id === preset.id;
               return (

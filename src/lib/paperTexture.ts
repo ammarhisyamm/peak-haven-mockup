@@ -75,3 +75,30 @@ export function getGrainTextures(grain: Grain): GrainTextures {
   cache.set(grain, textures);
   return textures;
 }
+
+let fabric: THREE.CanvasTexture | null = null;
+
+/** Fine woven-cotton bump map for garments (app-lifetime singleton). Garment UVs are in world units. */
+export function getFabricTexture(): THREE.CanvasTexture {
+  if (fabric) return fabric;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const rand = seededRandom(23);
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const weave = (Math.sin((x / size) * Math.PI * 2 * 16) + Math.sin((y / size) * Math.PI * 2 * 16)) * 18;
+      const v = 200 + weave + (rand() - 0.5) * 30;
+      const i = (y * size + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  fabric = new THREE.CanvasTexture(canvas);
+  fabric.wrapS = fabric.wrapT = THREE.RepeatWrapping;
+  fabric.repeat.set(6, 6);
+  return fabric;
+}

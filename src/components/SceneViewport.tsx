@@ -13,6 +13,7 @@ import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber';
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import PackagingModel, { getModelLayout, useSceneTextures } from './PackagingModel';
+import SceneBackdrop from './SceneBackdrop';
 import { getLayout, placeInstances, type LayoutId } from '../constants/layouts';
 import { canOpen, type ArtworkMap, type FinishId, type PackagingPreset } from '../constants/presets';
 import type { ViewSettings } from '../state/settings';
@@ -339,7 +340,8 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
           });
 
           const previousBackground = scene.background;
-          scene.background = new THREE.Color(background);
+          // A backdrop texture already paints the frame; otherwise fill with the chosen color.
+          if (!previousBackground) scene.background = new THREE.Color(background);
           const restore = suspendOffset(camera);
           recorder.start();
           try {
@@ -404,6 +406,8 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
           <Environment preset={settings.environment} environmentIntensity={intensity} />
         </Suspense>
       </SilentBoundary>
+
+      <SceneBackdrop backdropId={settings.backdrop} bounds={bounds} />
 
       <SceneContent
         preset={preset}

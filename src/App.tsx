@@ -4,6 +4,7 @@ import {
   Download,
   Focus,
   Hand,
+  Image as ImageIcon,
   LayoutGrid,
   Loader2,
   Minus,
@@ -27,6 +28,7 @@ import ModelsPanel from './components/panels/ModelsPanel';
 import LayoutPanel from './components/panels/LayoutPanel';
 import VideoPanel, { type VideoResult } from './components/panels/VideoPanel';
 import MorePanel from './components/panels/MorePanel';
+import BackgroundPanel from './components/panels/BackgroundPanel';
 import {
   CATEGORY_LABELS,
   canOpen,
@@ -40,12 +42,13 @@ import { saveProject, toStoredProject, type StoredProject } from './lib/projects
 import { useEditor, type EditorDoc } from './state/editor';
 import { DEFAULT_SETTINGS, type ViewSettings } from './state/settings';
 
-type PanelId = 'edit' | 'models' | 'layout' | 'video' | 'more';
+type PanelId = 'edit' | 'models' | 'layout' | 'background' | 'video' | 'more';
 
 const TABS: { id: PanelId; label: string; icon: LucideIcon }[] = [
   { id: 'edit', label: 'Edit', icon: PenTool },
   { id: 'models', label: 'Models', icon: Box },
   { id: 'layout', label: 'Layout', icon: LayoutGrid },
+  { id: 'background', label: 'Scene', icon: ImageIcon },
   { id: 'video', label: 'Video', icon: Video },
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
@@ -249,7 +252,11 @@ export default function App() {
           basePreset={basePreset}
           unit={settings.unit}
           onUnitChange={(unit) => patchSettings({ unit })}
-          onSelect={(presetId) => presetId !== doc.presetId && update({ presetId, size: null, open: 0 })}
+          onSelect={(presetId) => {
+            if (presetId === doc.presetId) return;
+            const color = getPreset(presetId).defaultColor;
+            update({ presetId, size: null, open: 0, ...(color ? { baseColor: color } : {}) });
+          }}
           onSize={(size) => update({ size })}
           onSaveProject={saveCurrentProject}
           onOpenProject={openProject}
@@ -258,6 +265,9 @@ export default function App() {
       break;
     case 'layout':
       panelContent = <LayoutPanel layoutId={doc.layoutId} onSelect={(layoutId) => update({ layoutId })} />;
+      break;
+    case 'background':
+      panelContent = <BackgroundPanel settings={settings} onChange={patchSettings} />;
       break;
     case 'video':
       panelContent = <VideoPanel canOpen={openable} background={videoBackground} onRecord={recordVideo} />;

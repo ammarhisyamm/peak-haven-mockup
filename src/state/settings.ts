@@ -17,6 +17,8 @@ export const ENVIRONMENTS: { id: EnvironmentPreset; label: string }[] = [
 export interface ViewSettings {
   transparentBg: boolean;
   bgColor: string;
+  /** Gradient, pattern or realistic scene behind the model (lib/backdrops.ts); null for a plain background. */
+  backdrop: string | null;
   environment: EnvironmentPreset;
   lightIntensity: number;
   shadows: boolean;
@@ -32,6 +34,7 @@ export const BACKGROUND_SWATCHES = ['#e5e7eb', '#cfe3fb', '#f5f5f4', '#fde68a', 
 export const DEFAULT_SETTINGS: ViewSettings = {
   transparentBg: true,
   bgColor: BACKGROUND_SWATCHES[0],
+  backdrop: null,
   environment: 'city',
   lightIntensity: 1,
   shadows: true,

@@ -1,4 +1,4 @@
-import { BACKGROUND_SWATCHES, ENVIRONMENTS, type ViewSettings } from '../../state/settings';
+import { ENVIRONMENTS, type ViewSettings } from '../../state/settings';
 import { PanelTitle, SectionLabel, Segmented, Toggle } from '../ui/controls';
 
 const EXPORT_SIZES: { value: number; label: string }[] = [
@@ -18,39 +18,6 @@ export default function MorePanel({
   return (
     <div>
       <PanelTitle>Scene &amp; export</PanelTitle>
-
-      <SectionLabel>Background</SectionLabel>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onChange({ transparentBg: true })}
-          aria-pressed={settings.transparentBg}
-          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-            settings.transparentBg ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600'
-          }`}
-        >
-          Transparent
-        </button>
-        {BACKGROUND_SWATCHES.map((color) => (
-          <button
-            key={color}
-            type="button"
-            onClick={() => onChange({ bgColor: color, transparentBg: false })}
-            aria-label={`Background ${color}`}
-            className={`h-8 w-8 rounded-lg border border-slate-300 ${
-              !settings.transparentBg && settings.bgColor === color ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
-            }`}
-            style={{ background: color }}
-          />
-        ))}
-        <input
-          type="color"
-          value={settings.bgColor}
-          onChange={(e) => onChange({ bgColor: e.target.value, transparentBg: false })}
-          className="h-8 w-10 cursor-pointer rounded-lg border border-slate-300 bg-white p-0.5"
-          aria-label="Custom background color"
-        />
-      </div>
 
       <SectionLabel>Lighting</SectionLabel>
       <select
