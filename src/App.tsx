@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   Loader2,
   Minus,
+  Moon,
   MoreHorizontal,
   Asterisk,
   PanelRightClose,
@@ -15,6 +16,7 @@ import {
   PenTool,
   Plus,
   Rotate3d,
+  Sun,
   Redo2,
   Ruler,
   Undo2,
@@ -40,6 +42,7 @@ import { buildDieline, dielineSvg } from './lib/dieline';
 import { saveProject, toStoredProject, type StoredProject } from './lib/projects';
 import { useEditor, type EditorDoc } from './state/editor';
 import { DEFAULT_SETTINGS, type ViewSettings } from './state/settings';
+import { useTheme } from './state/theme';
 import { Badge } from './components/reui/badge';
 import { IconTile } from './components/reui/icon-tile';
 import { Button } from './components/ui/button';
@@ -102,6 +105,7 @@ export default function App() {
   const { doc, update, replace, undo, redo, canUndo, canRedo } = useEditor();
   const [settings, setSettings] = useState<ViewSettings>(DEFAULT_SETTINGS);
   const [panel, setPanel] = useState<PanelId | null>('edit');
+  const { theme, toggle: toggleTheme } = useTheme();
   const [panMode, setPanMode] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -174,7 +178,7 @@ export default function App() {
     }
   }, [preset.id, settings]);
 
-  const videoBackground = settings.transparentBg ? '#151529' : settings.bgColor;
+  const videoBackground = settings.transparentBg ? (theme === 'dark' ? '#151529' : '#f5f3ee') : settings.bgColor;
   const recordVideo = useCallback(
     async (mode: VideoMode, seconds: number): Promise<VideoResult> => {
       const viewport = viewportRef.current;
@@ -294,7 +298,7 @@ export default function App() {
               <Asterisk strokeWidth={3} />
             </IconTile>
             <div className="hidden leading-tight sm:block">
-              <p className="font-display text-[17px] font-bold tracking-tight text-brand-lime">
+              <p className="font-display text-[17px] font-bold tracking-tight text-brand-text">
                 MOQZUNO<sup className="ml-0.5 text-[8px]">®</sup>
               </p>
               <p className="text-[11px] text-muted-foreground">Make it look unreal.</p>
@@ -316,6 +320,11 @@ export default function App() {
           <div className="flex shrink-0 items-center gap-1">
             <ToolButton label="Undo (Ctrl/⌘ Z)" onClick={undo} disabled={!canUndo} icon={Undo2} />
             <ToolButton label="Redo (Shift Ctrl/⌘ Z)" onClick={redo} disabled={!canRedo} icon={Redo2} />
+            <ToolButton
+              label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              onClick={toggleTheme}
+              icon={theme === 'dark' ? Sun : Moon}
+            />
             <Separator orientation="vertical" className="mx-1 hidden h-6 md:block" />
             <span className="hidden md:block">
               <ToolButton
@@ -338,12 +347,12 @@ export default function App() {
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           {/* Stage */}
           <main
-            className="relative min-h-[50vh] flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_40%,#2a2a52_0%,#18182e_55%,#0d0d1d_100%)]"
+            className="relative min-h-[50vh] flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_40%,var(--stage-a)_0%,var(--stage-b)_55%,var(--stage-c)_100%)]"
             style={settings.transparentBg ? undefined : { background: settings.bgColor }}
           >
             {/* Subtle dot grid so the stage reads as a canvas. */}
             {settings.transparentBg && (
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#caff5c_1px,transparent_1px)] bg-size-[24px_24px] opacity-[0.12]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(var(--stage-dot)_1px,transparent_1px)] bg-size-[24px_24px] opacity-[0.12]" />
             )}
             <div className="absolute inset-0">
               <SceneViewport

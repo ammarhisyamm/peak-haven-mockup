@@ -136,7 +136,7 @@ export default function ModelsPanel({
                     active ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-card hover:border-input'
                   }`}
                 >
-                  <div className="aspect-square rounded-lg bg-linear-to-b from-slate-100 to-brand-deep p-2">
+                  <div className="aspect-square rounded-lg bg-linear-to-b from-slate-100 to-[var(--thumb-end)] p-2">
                     <ModelThumb preset={p} />
                   </div>
                   <p className="mt-1.5 truncate text-xs font-medium text-foreground">{p.name}</p>

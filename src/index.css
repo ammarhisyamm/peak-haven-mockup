@@ -39,6 +39,77 @@
   --border: #2e2e50;
   --input: #3d3d63;
   --ring: #caff5c;
+
+  /* App-only tokens. */
+  --brand-text: #caff5c;
+  --stage-a: #2a2a52;
+  --stage-b: #18182e;
+  --stage-c: #0d0d1d;
+  --stage-dot: #caff5c;
+  --thumb-end: #0d0d1d;
+  color-scheme: dark;
+}
+
+/* Light mode: Soft Canvas surfaces, Midnight Ink text and buttons, lime kept for fills. */
+:root.light {
+  --background: #f5f3ee;
+  --foreground: #151529;
+  --card: #ffffff;
+  --card-foreground: #151529;
+  --popover: #ffffff;
+  --popover-foreground: #151529;
+  --primary: #151529;
+  --primary-foreground: #caff5c;
+  --secondary: #ebe9e3;
+  --secondary-foreground: #151529;
+  --muted: #ebe9e3;
+  --muted-foreground: #6e6d8c;
+  --accent: #e4e2ea;
+  --accent-foreground: #151529;
+  --destructive: #e5483a;
+  --destructive-foreground: #c8352a;
+  --success: #5b8a00;
+  --success-foreground: #4a7000;
+  --info: #7657ff;
+  --info-foreground: #5a3ce0;
+  --warning: #d98a00;
+  --warning-foreground: #a86a00;
+  --focus: #7657ff;
+  --focus-foreground: #5a3ce0;
+  --invert: #151529;
+  --invert-foreground: #f5f3ee;
+  --border: #e2e0d8;
+  --input: #d4d2ca;
+  --ring: #7657ff;
+
+  --brand-text: #151529;
+  --stage-a: #ffffff;
+  --stage-b: #efeee9;
+  --stage-c: #dedce6;
+  --stage-dot: #7657ff;
+  --thumb-end: #dedce6;
+  color-scheme: light;
+
+  /* The UI's slate/white/emerald classes, back on a light scale. */
+  --color-white: #ffffff;
+  --color-slate-50: #f7f6f2;
+  --color-slate-100: #efeee9;
+  --color-slate-200: #e2e0d8;
+  --color-slate-300: #cfcdc5;
+  --color-slate-400: #9a99b3;
+  --color-slate-500: #6e6d8c;
+  --color-slate-600: #4e4d6b;
+  --color-slate-700: #36355a;
+  --color-slate-800: #24233f;
+  --color-slate-900: #151529;
+  --color-slate-950: #0d0d1d;
+  --color-emerald-50: #f3ffd9;
+  --color-emerald-100: #e6ffb3;
+  --color-emerald-300: #a6dd2e;
+  --color-emerald-400: #8fc21a;
+  --color-emerald-500: #7657ff;
+  --color-emerald-600: #151529;
+  --color-emerald-700: #151529;
 }
 
 @theme inline {
@@ -77,6 +148,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-text: var(--brand-text);
 }
 
 @theme {
@@ -139,8 +211,7 @@ body,
 }
 
 body {
-  @apply bg-brand-ink text-slate-900 antialiased;
-  color-scheme: dark;
+  @apply bg-background text-foreground antialiased;
 }
 
 h1,
