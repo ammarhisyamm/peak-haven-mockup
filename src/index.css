@@ -1,6 +1,136 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './styles/shadcn.css';
+/* ReUI / shadcn "Nova" component style (compact spacing). */
+@import './styles/style-nova.css' layer(base);
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant style-nova (&:where(.style-nova *));
+
+/* shadcn semantic tokens that ReUI components read, set to the MOQZUNO palette. */
+:root {
+  --radius: 0.75rem;
+  --background: #151529;
+  --foreground: #f5f3ee;
+  --card: #1c1c36;
+  --card-foreground: #f5f3ee;
+  --popover: #1c1c36;
+  --popover-foreground: #f5f3ee;
+  --primary: #caff5c;
+  --primary-foreground: #151529;
+  --secondary: #23233f;
+  --secondary-foreground: #f5f3ee;
+  --muted: #23233f;
+  --muted-foreground: #9696b6;
+  --accent: #2e2e50;
+  --accent-foreground: #f5f3ee;
+  --destructive: #ff7868;
+  --destructive-foreground: #ff7868;
+  --success: #caff5c;
+  --success-foreground: #caff5c;
+  --info: #7657ff;
+  --info-foreground: #a996ff;
+  --warning: #ffb547;
+  --warning-foreground: #ffb547;
+  --focus: #7657ff;
+  --focus-foreground: #a996ff;
+  --invert: #f5f3ee;
+  --invert-foreground: #151529;
+  --border: #2e2e50;
+  --input: #3d3d63;
+  --ring: #caff5c;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-focus: var(--focus);
+  --color-focus-foreground: var(--focus-foreground);
+  --color-invert: var(--invert);
+  --color-invert-foreground: var(--invert-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'DM Sans', ui-sans-serif, sans-serif;
+
+  --color-white: #151529;
+
+  --color-slate-50: #1c1c36;
+  --color-slate-100: #23233f;
+  --color-slate-200: #2e2e50;
+  --color-slate-300: #3d3d63;
+  --color-slate-400: #717196;
+  --color-slate-500: #9696b6;
+  --color-slate-600: #b7b7cf;
+  --color-slate-700: #d6d6e4;
+  --color-slate-800: #ebe9ef;
+  --color-slate-900: #f5f3ee;
+  --color-slate-950: #ffffff;
+
+  --color-emerald-50: #2a3518;
+  --color-emerald-100: #34431c;
+  --color-emerald-300: #b4e64f;
+  --color-emerald-400: #d4ff7a;
+  --color-emerald-500: #caff5c;
+  --color-emerald-600: #caff5c;
+  --color-emerald-700: #caff5c;
+
+  --color-brand-lime: #caff5c;
+  --color-brand-ink: #151529;
+  --color-brand-deep: #0d0d1d;
+  --color-brand-violet: #7657ff;
+  --color-brand-canvas: #f5f3ee;
+  --color-brand-coral: #ff7868;
+  --color-brand-pure: #ffffff;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentcolor);
+  }
+}
 
 html,
 body,

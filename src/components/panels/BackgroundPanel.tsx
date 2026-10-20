@@ -51,7 +51,7 @@ function BackdropTile({ backdrop, active, onSelect }: { backdrop: Backdrop; acti
   return (
     <button type="button" onClick={onSelect} className="group text-left" aria-pressed={active}>
       <div
-        className={`relative aspect-[3/2] overflow-hidden rounded-lg border transition ${
+        className={`relative aspect-3/2 overflow-hidden rounded-lg border transition ${
           active ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-200 group-hover:border-slate-300'
         }`}
       >
@@ -86,7 +86,7 @@ export default function BackgroundPanel({
           type="button"
           onClick={() => onChange({ transparentBg: true, backdrop: null })}
           aria-pressed={plain && settings.transparentBg}
-          className={`h-8 rounded-lg border px-3 text-xs font-medium transition [background-image:linear-gradient(45deg,#e2e8f0_25%,transparent_25%,transparent_75%,#e2e8f0_75%),linear-gradient(45deg,#e2e8f0_25%,transparent_25%,transparent_75%,#e2e8f0_75%)] [background-position:0_0,5px_5px] [background-size:10px_10px] ${
+          className={`h-8 rounded-lg border px-3 text-xs font-medium transition bg-[linear-gradient(45deg,#e2e8f0_25%,transparent_25%,transparent_75%,#e2e8f0_75%),linear-gradient(45deg,#e2e8f0_25%,transparent_25%,transparent_75%,#e2e8f0_75%)] bg-position-[0_0,5px_5px] bg-size-[10px_10px] ${
             plain && settings.transparentBg ? 'border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/30' : 'border-slate-200 text-slate-600'
           }`}
         >

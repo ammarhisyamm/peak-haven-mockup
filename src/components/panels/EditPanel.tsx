@@ -13,7 +13,11 @@ import {
   type SizeOverride,
   type Unit,
 } from '../../constants/presets';
+import { Button } from '../ui/button';
 import { DropZone, FaceUploadRow, Field, PanelTitle, SectionLabel, SizeEditor } from '../ui/controls';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Separator } from '../ui/separator';
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -77,14 +81,10 @@ export default function EditPanel({
         onFile={(f) => onUpload(mainFace, f)}
         onClear={() => onUpload(mainFace, null)}
       />
-      <button
-        type="button"
-        onClick={onDownloadDieline}
-        className="mx-auto mt-3 flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-emerald-700"
-      >
-        <Download className="h-4 w-4" />
+      <Button variant="ghost" onClick={onDownloadDieline} className="mx-auto mt-3 flex text-foreground/80 hover:text-primary">
+        <Download data-icon="inline-start" />
         Download dieline (SVG)
-      </button>
+      </Button>
 
       {preset.category === 'object' && (
         <ul className="mt-4 space-y-2">
@@ -94,14 +94,15 @@ export default function EditPanel({
 
       {multiFace && (
         <>
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="lg"
             onClick={() => setFacesOpen((v) => !v)}
-            className="mt-4 flex w-full items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+            className="mt-4 h-10 w-full justify-between rounded-xl px-3.5"
           >
             Upload per face instead
-            {facesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
+            {facesOpen ? <ChevronDown /> : <ChevronRight />}
+          </Button>
           {facesOpen && (
             <ul className="mt-2 space-y-2">
               {facesForCategory(preset.category).map((face) => (
@@ -119,36 +120,37 @@ export default function EditPanel({
         </>
       )}
 
-      <hr className="my-5 border-slate-200" />
+      <Separator className="my-5" />
 
       <div className="space-y-2.5">
         <Field label="Material">
-          <select
-            value={finish}
-            onChange={(e) => onFinish(e.target.value as FinishId)}
-            className="-ml-1 w-full bg-transparent text-base text-slate-900 focus:outline-none"
-          >
-            {FINISH_ORDER.map((id) => (
-              <option key={id} value={id}>
-                {FINISHES[id].label}
-              </option>
-            ))}
-          </select>
+          <Select value={finish} onValueChange={(v) => onFinish(v as FinishId)}>
+            <SelectTrigger aria-label="Material" className="-ml-2.5 h-8 w-[calc(100%+1.25rem)] border-0 bg-transparent! text-base shadow-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {FINISH_ORDER.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {FINISHES[id].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
 
         <button
           type="button"
           onClick={() => setSizeOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-left hover:bg-slate-100"
+          className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-3.5 py-2.5 text-left shadow-xs hover:bg-muted"
         >
           <span>
-            <span className="block text-xs text-slate-500">{isCustom ? 'Custom size' : 'Size'}</span>
-            <span className="block text-base text-slate-900">{formatDimensions(preset, unit)}</span>
+            <span className="block text-xs text-muted-foreground">{isCustom ? 'Custom size' : 'Size'}</span>
+            <span className="block text-base text-foreground">{formatDimensions(preset, unit)}</span>
           </span>
-          {sizeOpen ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+          {sizeOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </button>
         {sizeOpen && (
-          <div className="rounded-xl border border-slate-200 p-3">
+          <div className="rounded-xl border border-border bg-card/50 p-3">
             <SizeEditor preset={preset} basePreset={basePreset} unit={unit} onUnitChange={onUnitChange} onApply={onSize} />
           </div>
         )}
@@ -163,10 +165,10 @@ export default function EditPanel({
               value={fixedColor ?? baseColor}
               disabled={!!fixedColor}
               onChange={(e) => onBaseColor(e.target.value)}
-              className="h-8 w-10 cursor-pointer rounded-md border border-slate-300 bg-white p-0.5 disabled:cursor-not-allowed"
+              className="h-8 w-10 cursor-pointer rounded-md border border-input bg-background p-0.5 disabled:cursor-not-allowed"
               aria-label="Base color"
             />
-            <input
+            <Input
               type="text"
               value={fixedColor ?? hexDraft ?? baseColor}
               disabled={!!fixedColor}
@@ -177,16 +179,16 @@ export default function EditPanel({
                 if (HEX_COLOR.test(e.target.value)) onBaseColor(e.target.value.toLowerCase());
               }}
               onBlur={() => setHexDraft(null)}
-              className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 font-mono text-sm uppercase focus:border-emerald-500 focus:outline-none"
+              className="w-24 font-mono uppercase"
             />
           </div>
         </Field>
       </div>
 
       <SectionLabel>Model</SectionLabel>
-      <p className="flex items-center gap-1.5 text-sm text-slate-500">
+      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Info className="h-4 w-4" />
-        Model ID: <span className="font-medium text-slate-700">{preset.id}</span> · {preset.description}
+        Model ID: <span className="font-medium text-foreground/80">{preset.id}</span> · {preset.description}
       </p>
     </div>
   );

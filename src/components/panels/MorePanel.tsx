@@ -1,5 +1,7 @@
 import { ENVIRONMENTS, type ViewSettings } from '../../state/settings';
 import { PanelTitle, SectionLabel, Segmented, Toggle } from '../ui/controls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Slider } from '../ui/slider';
 
 const EXPORT_SIZES: { value: number; label: string }[] = [
   { value: 1080, label: '1080' },
@@ -20,49 +22,39 @@ export default function MorePanel({
       <PanelTitle>Scene &amp; export</PanelTitle>
 
       <SectionLabel>Lighting</SectionLabel>
-      <select
+      <Select
         value={settings.environment}
-        onChange={(e) => onChange({ environment: e.target.value as ViewSettings['environment'] })}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+        onValueChange={(v) => onChange({ environment: v as ViewSettings['environment'] })}
       >
-        {ENVIRONMENTS.map((env) => (
-          <option key={env.id} value={env.id}>
-            {env.label}
-          </option>
-        ))}
-      </select>
-      <label className="mt-3 block text-sm text-slate-700">
-        <span className="flex justify-between">
-          Brightness <span className="tabular-nums text-slate-500">{Math.round(settings.lightIntensity * 100)}%</span>
-        </span>
-        <input
-          type="range"
-          min={0.3}
-          max={2}
-          step={0.05}
-          value={settings.lightIntensity}
-          onChange={(e) => onChange({ lightIntensity: Number(e.target.value) })}
-          className="w-full accent-emerald-600"
-        />
-      </label>
+        <SelectTrigger aria-label="Lighting" className="h-9 w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent position="popper">
+          {ENVIRONMENTS.map((env) => (
+            <SelectItem key={env.id} value={env.id}>
+              {env.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <RangeField
+        label="Brightness"
+        value={settings.lightIntensity}
+        min={0.3}
+        max={2}
+        onChange={(lightIntensity) => onChange({ lightIntensity })}
+      />
 
       <SectionLabel>Scene</SectionLabel>
       <Toggle label="Ground shadow" checked={settings.shadows} onChange={(v) => onChange({ shadows: v })} />
       {settings.shadows && (
-        <label className="block text-sm text-slate-700">
-          <span className="flex justify-between">
-            Shadow strength <span className="tabular-nums text-slate-500">{Math.round(settings.shadowOpacity * 100)}%</span>
-          </span>
-          <input
-            type="range"
-            min={0.1}
-            max={1}
-            step={0.05}
-            value={settings.shadowOpacity}
-            onChange={(e) => onChange({ shadowOpacity: Number(e.target.value) })}
-            className="w-full accent-emerald-600"
-          />
-        </label>
+        <RangeField
+          label="Shadow strength"
+          value={settings.shadowOpacity}
+          min={0.1}
+          max={1}
+          onChange={(shadowOpacity) => onChange({ shadowOpacity })}
+        />
       )}
       <Toggle label="Auto-rotate camera" checked={settings.autoRotate} onChange={(v) => onChange({ autoRotate: v })} />
 
@@ -107,6 +99,29 @@ export default function MorePanel({
         <dt className="font-mono">Scroll</dt>
         <dd>Zoom</dd>
       </dl>
+    </div>
+  );
+}
+
+function RangeField({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="mt-3 mb-2 text-sm text-foreground/85">
+      <p className="mb-2.5 flex justify-between">
+        {label} <span className="tabular-nums text-muted-foreground">{Math.round(value * 100)}%</span>
+      </p>
+      <Slider min={min} max={max} step={0.05} value={[value]} onValueChange={([v]) => onChange(v)} aria-label={label} />
     </div>
   );
 }

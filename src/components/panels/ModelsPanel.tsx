@@ -11,7 +11,10 @@ import {
 } from '../../constants/presets';
 import { deleteProject, listProjects, type StoredProject } from '../../lib/projects';
 import { ModelThumb } from '../ui/Thumbnails';
+import { Badge } from '../reui/badge';
+import { Button } from '../ui/button';
 import { Segmented, SizeEditor } from '../ui/controls';
+import { Input } from '../ui/input';
 
 type Tab = 'library' | 'projects' | 'custom';
 type Filter = 'all' | LibraryGroup;
@@ -75,51 +78,52 @@ export default function ModelsPanel({
 
       {tab === 'library' && (
         <>
-          <label className="mt-3 flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
-            <Search className="h-4 w-4 text-slate-400" />
-            <input
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search models, e.g. mailer, vial 10ml"
-              className="w-full bg-transparent text-sm focus:outline-none"
+              aria-label="Search models"
+              className="h-9 pl-8"
             />
-          </label>
+          </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {(['all', ...LIBRARY_GROUPS] as Filter[]).map((f) => (
-              <button
+              <Button
                 key={f}
-                type="button"
+                size="xs"
+                variant={filter === f ? 'default' : 'outline'}
+                aria-pressed={filter === f}
                 onClick={() => {
                   setFilter(f);
                   setType(null);
                 }}
-                className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  filter === f
-                    ? 'border-brand-violet bg-brand-violet text-slate-950'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`rounded-full px-3 ${filter === f ? 'bg-brand-violet text-brand-pure hover:bg-brand-violet/85' : 'text-muted-foreground'}`}
               >
                 {f === 'all' ? 'All' : f}
-              </button>
+              </Button>
             ))}
           </div>
           {types.length > 1 && (
             <div className="mt-2 flex flex-wrap gap-x-1 gap-y-1">
               {types.map((t) => (
-                <button
+                <Button
                   key={t}
-                  type="button"
+                  size="xs"
+                  variant="ghost"
+                  aria-pressed={type === t}
                   onClick={() => setType((cur) => (cur === t ? null : t))}
-                  className={`rounded-md px-2 py-1 text-xs transition ${
-                    type === t ? 'bg-emerald-50 font-medium text-emerald-700' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                  className={type === t ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'font-normal text-muted-foreground'}
                 >
                   {t}
-                </button>
+                </Button>
               ))}
             </div>
           )}
-          <p className="mt-3 text-[11px] text-slate-500">{results.length} models</p>
+          <Badge variant="outline" size="sm" radius="full" className="mt-3 text-muted-foreground">
+            {results.length} models
+          </Badge>
           <div className="mt-1.5 grid grid-cols-2 gap-2.5">
             {results.map((p) => {
               const active = p.id === preset.id;
@@ -129,14 +133,14 @@ export default function ModelsPanel({
                   type="button"
                   onClick={() => onSelect(p.id)}
                   className={`group rounded-xl border p-2 text-left transition ${
-                    active ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
+                    active ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-card hover:border-input'
                   }`}
                 >
-                  <div className="aspect-square rounded-lg bg-gradient-to-b from-slate-100 to-brand-deep p-2">
+                  <div className="aspect-square rounded-lg bg-linear-to-b from-slate-100 to-brand-deep p-2">
                     <ModelThumb preset={p} />
                   </div>
-                  <p className="mt-1.5 truncate text-xs font-medium text-slate-800">{p.name}</p>
-                  <p className="truncate text-[11px] text-slate-500">{formatDimensions(p, unit)}</p>
+                  <p className="mt-1.5 truncate text-xs font-medium text-foreground">{p.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{formatDimensions(p, unit)}</p>
                 </button>
               );
             })}
@@ -149,8 +153,8 @@ export default function ModelsPanel({
 
       {tab === 'custom' && (
         <div className="mt-4">
-          <p className="mb-3 text-sm text-slate-600">
-            Set an exact size for <span className="font-medium text-slate-900">{basePreset.name}</span>. The
+          <p className="mb-3 text-sm text-muted-foreground">
+            Set an exact size for <span className="font-medium text-foreground">{basePreset.name}</span>. The
             dieline template follows the new size.
           </p>
           <SizeEditor preset={preset} basePreset={basePreset} unit={unit} onUnitChange={onUnitChange} onApply={onSize} />
@@ -194,22 +198,18 @@ function ProjectsTab({ onSave, onOpen }: { onSave: (name: string) => Promise<voi
   return (
     <div className="mt-3">
       <div className="flex gap-2">
-        <input
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && save()}
           placeholder="Project name"
-          className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          aria-label="Project name"
+          className="h-9 min-w-0 flex-1"
         />
-        <button
-          type="button"
-          onClick={save}
-          disabled={busy}
-          className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        <Button onClick={save} disabled={busy} className="h-9 font-semibold">
+          {busy ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Save data-icon="inline-start" />}
           Save
-        </button>
+        </Button>
       </div>
       <p className="mt-1.5 text-[11px] text-slate-500">Projects are saved in this browser, artwork included.</p>
       {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
@@ -218,35 +218,30 @@ function ProjectsTab({ onSave, onOpen }: { onSave: (name: string) => Promise<voi
         {projects === null && <li className="py-4 text-center text-sm text-slate-500">Loading…</li>}
         {projects?.length === 0 && <li className="py-4 text-center text-sm text-slate-500">No saved projects yet.</li>}
         {projects?.map((p) => (
-          <li key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-2">
-            <img src={p.thumbnail} alt="" className="h-14 w-14 rounded-lg bg-slate-100 object-contain" />
+          <li key={p.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-2">
+            <img src={p.thumbnail} alt="" className="h-14 w-14 rounded-lg bg-muted object-contain" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-              <p className="text-xs text-slate-500">
+              <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
+              <p className="text-xs text-muted-foreground">
                 {p.doc.presetId} · {new Date(p.updatedAt).toLocaleDateString()}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpen(p)}
-              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
-              aria-label={`Open ${p.name}`}
-              title="Open"
-            >
-              <FolderOpen className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
+            <Button variant="ghost" size="icon-sm" onClick={() => onOpen(p)} aria-label={`Open ${p.name}`} title="Open">
+              <FolderOpen />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={async () => {
                 await deleteProject(p.id);
                 refresh();
               }}
-              className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               aria-label={`Delete ${p.name}`}
               title="Delete"
             >
-              <Trash2 className="h-4 w-4" />
-            </button>
+              <Trash2 />
+            </Button>
           </li>
         ))}
       </ul>

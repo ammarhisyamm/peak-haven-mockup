@@ -4,7 +4,7 @@ MOQZUNO is a creative mockup & 3D product visualization studio. The UI follows t
 
 Interactive 3D packaging mockups in the browser: pick a box, bottle/jar, glass vial, vial + box set or label preset, upload artwork per face, choose a finish, and export a transparent high-resolution PNG.
 
-Built with React 18 + Vite + TypeScript, Tailwind CSS, Lucide icons, Three.js, @react-three/fiber and @react-three/drei.
+Built with React 18 + Vite + TypeScript, Tailwind CSS 4, [ReUI](https://reui.io) / shadcn components (Radix, Nova style), Lucide icons, Three.js, @react-three/fiber and @react-three/drei.
 
 ## Run
 
@@ -41,6 +41,12 @@ npm run preview    # serve the production build
 | `src/components/SceneViewport.tsx` | R3F canvas, lighting, shadows, camera views, PNG capture, video recording |
 | `src/components/panels/*` | Edit, Models, Layout, Video and More panels |
 | `src/App.tsx` | Editor shell, toolbars, export, dieline modal |
+| `src/components/ui/*`, `src/components/reui/*` | ReUI / shadcn components (button, tabs, select, slider, switch, toggle group, tooltip, dialog, badge, icon tile) |
+| `src/index.css`, `src/styles/*` | MOQZUNO tokens for the shadcn variables, plus the Nova component style |
+
+## Adding ReUI components
+
+`components.json` points the shadcn CLI at the ReUI registry, so `npx shadcn@latest add @reui/<name>` installs into `src/components`. With the ReUI MCP (`claude mcp add --transport http reui https://mcp.reui.io`) Claude Code can look components up and add them the same way. Colors come from the CSS variables in `src/index.css`, so new components pick up the MOQZUNO palette.
 
 ## Notes
 

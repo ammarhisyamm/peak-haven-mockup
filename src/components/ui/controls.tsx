@@ -9,6 +9,11 @@ import {
   type SizeOverride,
   type Unit,
 } from '../../constants/presets';
+import { Button } from './button';
+import { Input } from './input';
+import { Label } from './label';
+import { Switch } from './switch';
+import { ToggleGroup, ToggleGroupItem } from './toggle-group';
 
 /* ------------------------------------------------------------------ */
 /* Layout primitives                                                  */
@@ -17,7 +22,7 @@ import {
 export function PanelTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h2 className="text-base font-semibold tracking-tight text-slate-900">{children}</h2>
+      <h2 className="text-base font-semibold tracking-tight text-foreground">{children}</h2>
       {aside}
     </div>
   );
@@ -25,10 +30,10 @@ export function PanelTitle({ children, aside }: { children: ReactNode; aside?: R
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5">
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="rounded-xl border border-border bg-card px-3.5 py-2.5 shadow-xs">
+      <p className="text-xs text-muted-foreground">{label}</p>
       <div className="mt-0.5">{children}</div>
-      {hint && <p className="mt-1 text-[11px] text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -36,7 +41,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 export function SectionLabel({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="mb-2 mt-5 flex items-center justify-between">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{children}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{children}</h3>
       {aside}
     </div>
   );
@@ -52,40 +57,33 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+    <ToggleGroup
+      type="single"
+      value={value}
+      onValueChange={(v) => v && onChange(v as T)}
+      spacing={1}
+      className="w-full rounded-xl bg-muted p-1"
+    >
       {options.map((o) => (
-        <button
+        <ToggleGroupItem
           key={o.value}
-          type="button"
+          value={o.value}
           disabled={o.disabled}
-          onClick={() => onChange(o.value)}
-          className={`flex-1 rounded-lg px-2 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
-            value === o.value ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-          }`}
+          className="flex-1 text-muted-foreground hover:bg-accent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
           {o.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between py-1.5 text-sm text-slate-700">
+    <Label className="flex cursor-pointer items-center justify-between py-1.5 text-sm font-normal text-foreground/85">
       {label}
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-6 w-10 rounded-full transition ${checked ? 'bg-emerald-600' : 'bg-slate-300'}`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`}
-        />
-      </button>
-    </label>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </Label>
   );
 }
 
@@ -129,41 +127,29 @@ export function DropZone({
       onDragLeave={() => setOver(false)}
       onDrop={handleDrop}
       className={`relative flex min-h-[180px] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 border-dashed p-4 text-center transition ${
-        over ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-300 bg-emerald-50'
+        over ? 'border-primary bg-primary/15' : 'border-primary/40 bg-primary/5'
       }`}
     >
       {url ? (
         <>
-          <img src={url} alt="" className="max-h-28 max-w-full rounded-lg object-contain shadow-sm" />
+          <img src={url} alt="" className="max-h-28 max-w-full rounded-lg object-contain shadow-xs" />
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
-            >
+            <Button size="sm" onClick={() => inputRef.current?.click()}>
               Replace
-            </button>
-            <button
-              type="button"
-              onClick={onClear}
-              className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
+            </Button>
+            <Button size="sm" variant="outline" onClick={onClear}>
               Remove
-            </button>
+            </Button>
           </div>
         </>
       ) : (
         <>
-          <Upload className="h-8 w-8 text-emerald-500" />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-500"
-          >
-            <Upload className="h-4 w-4" />
+          <Upload className="h-8 w-8 text-primary" />
+          <Button size="lg" className="px-5 font-semibold" onClick={() => inputRef.current?.click()}>
+            <Upload data-icon="inline-start" />
             {title}
-          </button>
-          <p className="text-xs text-slate-500">{hint}</p>
+          </Button>
+          <p className="text-xs text-muted-foreground">{hint}</p>
         </>
       )}
       <input
@@ -212,37 +198,34 @@ export function FaceUploadRow({
         if (file) onChange(face, file);
       }}
       className={`flex items-center gap-3 rounded-xl border p-2 transition ${
-        dragOver ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'
+        dragOver ? 'border-primary bg-primary/10' : 'border-border bg-card'
       }`}
     >
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-500"
+        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-input bg-muted text-muted-foreground hover:border-primary hover:text-primary"
         aria-label={`Upload ${label}`}
       >
         {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : <Layers className="h-4 w-4" />}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        <p className="text-xs text-slate-500">{url ? 'Own artwork' : inherited ? 'From full dieline' : 'Empty'}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{url ? 'Own artwork' : inherited ? 'From full dieline' : 'Empty'}</p>
       </div>
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-      >
+      <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()}>
         {url ? 'Replace' : 'Upload'}
-      </button>
+      </Button>
       {url && (
-        <button
-          type="button"
+        <Button
+          size="icon-sm"
+          variant="ghost"
           onClick={() => onChange(face, null)}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           aria-label={`Remove ${label}`}
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X />
+        </Button>
       )}
       <input
         ref={inputRef}
@@ -324,43 +307,36 @@ export function SizeEditor({
       />
       <div className={`grid gap-2 ${fields.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
         {fields.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1 block text-xs text-slate-500">{f.label}</span>
-            <input
+          <div key={f.key} className="grid gap-1.5">
+            <Label htmlFor={`size-${f.key}`} className="text-xs font-normal text-muted-foreground">
+              {f.label}
+            </Label>
+            <Input
+              id={`size-${f.key}`}
               type="number"
               inputMode="decimal"
               step={unit === 'mm' ? 1 : 0.01}
               value={draft[f.key] ?? ''}
               onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && apply()}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              className="tabular-nums"
             />
-          </label>
+          </div>
         ))}
       </div>
       {!valid && (
-        <p className="text-xs text-rose-600">
+        <p className="text-xs text-destructive">
           Each size must be between {fromMm(LIMITS.min, unit).toFixed(unit === 'mm' ? 0 : 2)} and{' '}
           {fromMm(LIMITS.max, unit).toFixed(unit === 'mm' ? 0 : 1)} {unit}.
         </p>
       )}
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={apply}
-          disabled={!valid}
-          className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
-        >
+        <Button onClick={apply} disabled={!valid} className="flex-1 font-semibold">
           Apply size
-        </button>
-        <button
-          type="button"
-          onClick={() => onApply(null)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          title={`Back to ${basePreset.id} size`}
-        >
+        </Button>
+        <Button variant="outline" onClick={() => onApply(null)} title={`Back to ${basePreset.id} size`}>
           Reset
-        </button>
+        </Button>
       </div>
     </div>
   );

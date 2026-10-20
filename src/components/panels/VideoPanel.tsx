@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Download, Loader2, Video } from 'lucide-react';
 import type { VideoMode } from '../SceneViewport';
 import { PanelTitle, SectionLabel, Segmented } from '../ui/controls';
+import { Button } from '../ui/button';
 
 const DURATIONS = [4, 6, 8, 12];
 
@@ -67,32 +68,25 @@ export default function VideoPanel({
       />
 
       <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-        <span className="inline-block h-4 w-4 rounded border border-slate-300" style={{ background }} />
+        <span className="inline-block h-4 w-4 rounded-sm border border-slate-300" style={{ background }} />
         Background color comes from More → Background (videos can't be transparent).
       </p>
 
-      <button
-        type="button"
-        onClick={record}
-        disabled={busy}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-70"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+      <Button size="lg" onClick={record} disabled={busy} className="mt-4 h-11 w-full rounded-xl font-semibold disabled:cursor-wait">
+        {busy ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Video data-icon="inline-start" />}
         {busy ? `Recording ${seconds}s…` : 'Record video'}
-      </button>
-      {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+      </Button>
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
 
       {result && (
         <div className="mt-4 space-y-2">
           <video src={result.url} controls loop autoPlay muted playsInline className="w-full rounded-xl bg-slate-100" />
-          <a
-            href={result.url}
-            download={result.filename}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
-          >
-            <Download className="h-4 w-4" />
-            Download {result.filename}
-          </a>
+          <Button asChild variant="outline" size="lg" className="h-10 w-full rounded-xl">
+            <a href={result.url} download={result.filename}>
+              <Download data-icon="inline-start" />
+              Download {result.filename}
+            </a>
+          </Button>
         </div>
       )}
     </div>

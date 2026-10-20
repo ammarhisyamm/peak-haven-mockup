@@ -19,7 +19,7 @@ export default function LayoutPanel({ layoutId, onSelect }: { layoutId: LayoutId
                 active ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              <div className="aspect-[4/3] rounded-lg bg-gradient-to-b from-slate-50 to-slate-200 p-2">
+              <div className="aspect-4/3 rounded-lg bg-linear-to-b from-slate-50 to-slate-200 p-2">
                 <LayoutThumb layout={layout} />
               </div>
               <p className="mt-1.5 text-xs font-medium text-slate-800">{layout.name}</p>
