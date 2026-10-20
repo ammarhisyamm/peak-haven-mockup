@@ -1,18 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type DependencyList } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState, type DependencyList, type MutableRefObject } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
   BOX_FACE_ORDER,
   FINISHES,
   MM_PER_UNIT,
+  boardThickness,
   facesForCategory,
   type ArtworkMap,
   type BottlePreset,
+  type BoxFace,
   type FaceKey,
   type FinishId,
   type PackagingPreset,
   type SetPreset,
 } from '../constants/presets';
+import { buildDieline, sliceDielineTexture } from '../lib/dieline';
+import { getGrainTextures } from '../lib/paperTexture';
+import { FULL_WRAP, bottleParts, labelBand } from '../lib/shapes';
 
 /* ------------------------------------------------------------------ */
 /* Layout / scaling                                                   */
@@ -25,10 +30,13 @@ const MAX_FIT_SIZE = 3.0;
 /** Gap between the carton and the vial in a set, as a fraction of the vial diameter. */
 const SET_GAP_RATIO = 0.35;
 
+/** Lid angle when fully open. */
+const LID_OPEN_ANGLE = Math.PI * 0.62;
+
 export interface ModelLayout {
   /** World units per millimeter (1 unit = 50 mm, adjusted by the fit factor). */
   unitsPerMm: number;
-  /** World-space bounding size [width, height, depth]. */
+  /** World-space bounding size [width, height, depth]; x/z centered, y from 0. */
   size: [number, number, number];
 }
 
@@ -89,19 +97,39 @@ interface SurfaceOptions {
   finish: FinishId;
 }
 
-/** Applies finish + color + artwork map to a material, recompiling the shader only when the map toggles on/off. */
+/**
+ * Applies finish, color, artwork and paper grain to a material. The shader is recompiled
+ * only when a map is added or removed.
+ */
 function applySurface(material: THREE.MeshStandardMaterial, { map, baseColor, finish }: SurfaceOptions) {
   const preset = FINISHES[finish];
-  const hadMap = material.map !== null;
-  material.map = map;
-  // Artwork is shown with its true colors; otherwise use the kraft tone or the picked base color.
+  const grain = preset.grain ? getGrainTextures(preset.grain) : null;
+  const before = `${!!material.map}|${!!material.bumpMap}`;
+  // Artwork shows its true colors; plain surfaces use the finish tone or the picked base color.
+  material.map = map ?? grain?.color ?? null;
+  material.bumpMap = grain?.bump ?? null;
+  material.bumpScale = 0.6;
   material.color.set(map ? '#ffffff' : (preset.baseColor ?? baseColor));
   material.roughness = preset.roughness;
   material.metalness = preset.metalness;
-  if (hadMap !== (map !== null)) material.needsUpdate = true;
+  if (before !== `${!!material.map}|${!!material.bumpMap}`) material.needsUpdate = true;
 }
 
-type TextureMap = Partial<Record<FaceKey, THREE.Texture>>;
+/** Inside of an opened box: plain board in the finish's interior tone. */
+function applyInterior(material: THREE.MeshStandardMaterial, finish: FinishId) {
+  const preset = FINISHES[finish];
+  const grain = preset.grain ? getGrainTextures(preset.grain) : null;
+  const before = `${!!material.map}|${!!material.bumpMap}`;
+  material.map = grain?.color ?? null;
+  material.bumpMap = grain?.bump ?? null;
+  material.bumpScale = 0.6;
+  material.color.set(preset.interiorColor);
+  material.roughness = 0.9;
+  material.metalness = 0;
+  if (before !== `${!!material.map}|${!!material.bumpMap}`) material.needsUpdate = true;
+}
+
+export type TextureMap = Partial<Record<FaceKey, THREE.Texture>>;
 
 /**
  * Loads artwork object URLs into textures with THREE.TextureLoader.
@@ -195,6 +223,38 @@ function useArtworkTextures(artwork: ArtworkMap, faces: FaceKey[]): TextureMap {
   return textures;
 }
 
+/**
+ * Per-face textures for a preset: a full-dieline upload is sliced into every face, and any
+ * per-face upload takes precedence over its slice. Call once per scene and share the result
+ * between layout instances.
+ */
+export function useSceneTextures(artwork: ArtworkMap, preset: PackagingPreset): TextureMap {
+  const faces = useMemo<FaceKey[]>(() => [...facesForCategory(preset.category), 'dieline'], [preset.category]);
+  const loaded = useArtworkTextures(artwork, faces);
+  const dieline = useMemo(() => buildDieline(preset), [preset]);
+  const dielineTexture = loaded.dieline ?? null;
+  const slices = useMemo(
+    () => (dielineTexture ? sliceDielineTexture(dielineTexture, dieline) : {}),
+    [dielineTexture, dieline],
+  );
+  useEffect(() => () => Object.values(slices).forEach((t) => t?.dispose()), [slices]);
+
+  return useMemo(() => {
+    const merged: TextureMap = { ...slices };
+    for (const face of faces) {
+      if (face !== 'dieline' && loaded[face]) merged[face] = loaded[face];
+    }
+    return merged;
+  }, [slices, loaded, faces]);
+}
+
+/** Width / height of the part of the image a texture shows (1 when unknown). */
+function textureAspect(texture: THREE.Texture | null): number {
+  const image = texture?.image as { width?: number; height?: number } | undefined;
+  if (!texture || !image?.width || !image?.height) return 1;
+  return (image.width * texture.repeat.x) / (image.height * texture.repeat.y);
+}
+
 /* ------------------------------------------------------------------ */
 /* Model components                                                   */
 /* ------------------------------------------------------------------ */
@@ -205,30 +265,111 @@ interface SurfaceProps {
   finish: FinishId;
 }
 
-/** Boxes and labels: BoxGeometry with a 6-material array in [+X, -X, +Y, -Y, +Z, -Z] order. */
-function BoxMesh({
+/** Eases a displayed value towards the shared open target each frame. */
+function useEasedOpen(openRef: MutableRefObject<number>, apply: (open: number) => void) {
+  const current = useRef(openRef.current);
+  useFrame((_, delta) => {
+    const target = openRef.current;
+    current.current += (target - current.current) * Math.min(1, delta * 8);
+    if (Math.abs(target - current.current) < 1e-4) current.current = target;
+    apply(current.current);
+  });
+}
+
+/**
+ * Openable carton built from separate board panels: walls, bottom, a lid hinged at the back
+ * edge and a tuck flap hinged at the lid's front edge. Outer faces carry the artwork in
+ * Three.js BoxGeometry face order; edges and insides use the finish's interior board.
+ */
+function PanelBox({
   size,
+  thickness,
   textures,
   baseColor,
   finish,
-}: SurfaceProps & { size: [number, number, number] }) {
+  openRef,
+}: SurfaceProps & { size: [number, number, number]; thickness: number; openRef: MutableRefObject<number> }) {
+  const [w, h, d] = size;
+  const t = thickness;
+  const flapH = Math.min(d * 0.35, h * 0.4);
+
+  const geometries = useDisposable(() => {
+    const g = {
+      front: new THREE.BoxGeometry(w, h - 2 * t, t),
+      back: new THREE.BoxGeometry(w, h - 2 * t, t),
+      right: new THREE.BoxGeometry(t, h - 2 * t, d - 2 * t),
+      left: new THREE.BoxGeometry(t, h - 2 * t, d - 2 * t),
+      bottom: new THREE.BoxGeometry(w, t, d),
+      lid: new THREE.BoxGeometry(w, t, d),
+      flap: new THREE.BoxGeometry(Math.max(w - 2.2 * t, t), flapH, t),
+    };
+    return { ...g, dispose: () => Object.values(g).forEach((x) => x.dispose()) };
+  }, [w, h, d, t, flapH]);
+
+  const faceMaterials = useMaterials(BOX_FACE_ORDER.length);
+  const [interior] = useMaterials(1);
+  const face = (f: BoxFace) => faceMaterials[BOX_FACE_ORDER.indexOf(f)];
+
+  const panelMaterials = useMemo(() => {
+    const I = interior;
+    return {
+      front: [I, I, I, I, face('front'), I],
+      back: [I, I, I, I, I, face('back')],
+      right: [face('right'), I, I, I, I, I],
+      left: [I, face('left'), I, I, I, I],
+      bottom: [I, I, I, face('bottom'), I, I],
+      lid: [I, I, face('top'), I, I, I],
+      flap: I,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [faceMaterials, interior]);
+
+  useEffect(() => {
+    BOX_FACE_ORDER.forEach((f, i) => {
+      applySurface(faceMaterials[i], { map: textures[f] ?? null, baseColor, finish });
+    });
+    applyInterior(interior, finish);
+  }, [faceMaterials, interior, textures, baseColor, finish]);
+
+  const lidRef = useRef<THREE.Group>(null);
+  const flapRef = useRef<THREE.Group>(null);
+  useEasedOpen(openRef, (open) => {
+    if (lidRef.current) lidRef.current.rotation.x = -open * LID_OPEN_ANGLE;
+    if (flapRef.current) flapRef.current.rotation.x = -open * Math.PI * 0.42;
+  });
+
+  return (
+    <group>
+      <mesh geometry={geometries.bottom} material={panelMaterials.bottom} position={[0, t / 2, 0]} />
+      <mesh geometry={geometries.front} material={panelMaterials.front} position={[0, h / 2, d / 2 - t / 2]} />
+      <mesh geometry={geometries.back} material={panelMaterials.back} position={[0, h / 2, -d / 2 + t / 2]} />
+      <mesh geometry={geometries.right} material={panelMaterials.right} position={[w / 2 - t / 2, h / 2, 0]} />
+      <mesh geometry={geometries.left} material={panelMaterials.left} position={[-w / 2 + t / 2, h / 2, 0]} />
+      {/* Lid hinged on the back top edge. */}
+      <group ref={lidRef} position={[0, h - t, -d / 2]}>
+        <mesh geometry={geometries.lid} material={panelMaterials.lid} position={[0, t / 2, d / 2]} />
+        {/* Tuck flap: hangs inside the front wall when closed, swings forward as the lid opens. */}
+        <group ref={flapRef} position={[0, 0, d - t]}>
+          <mesh geometry={geometries.flap} material={panelMaterials.flap} position={[0, -flapH / 2, -t / 2]} />
+        </group>
+      </group>
+    </group>
+  );
+}
+
+/** Stickers: a thin BoxGeometry with artwork on the front face. */
+function LabelMesh({ size, textures, baseColor, finish }: SurfaceProps & { size: [number, number, number] }) {
   const [w, h, d] = size;
   const geometry = useDisposable(() => new THREE.BoxGeometry(w, h, d), [w, h, d]);
   const materials = useMaterials(BOX_FACE_ORDER.length);
 
   useEffect(() => {
     BOX_FACE_ORDER.forEach((face, i) => {
-      applySurface(materials[i], { map: textures[face] ?? null, baseColor, finish });
+      applySurface(materials[i], { map: face === 'front' ? (textures.front ?? null) : null, baseColor, finish });
     });
   }, [materials, textures, baseColor, finish]);
 
   return <mesh geometry={geometry} material={materials} position={[0, h / 2, 0]} />;
-}
-
-/** Width / height of a loaded texture's image (1 when unknown). */
-function textureAspect(texture: THREE.Texture | null): number {
-  const image = texture?.image as { width?: number; height?: number } | undefined;
-  return image?.width && image?.height ? image.width / image.height : 1;
 }
 
 /** Revolved body profile with a rounded base and an optional shoulder narrowing to the neck. */
@@ -253,25 +394,6 @@ function createBodyGeometry(radius: number, height: number, neckRadius: number, 
   pts.push(new THREE.Vector2(0, height));
   // phiStart = PI puts the lathe seam at the back, away from the label.
   return new THREE.LatheGeometry(pts, 96, Math.PI, Math.PI * 2);
-}
-
-interface BottleParts {
-  bodyHeight: number;
-  neckRadius: number;
-  shoulder: number;
-}
-
-function bottleParts(kind: BottlePreset['kind'], r: number, H: number): BottleParts {
-  switch (kind) {
-    case 'dropper':
-      return { bodyHeight: H * 0.62, neckRadius: r * 0.55, shoulder: Math.min(r * 0.45, H * 0.12) };
-    case 'serum':
-      return { bodyHeight: H * 0.76, neckRadius: r * 0.45, shoulder: Math.min(r * 0.4, H * 0.1) };
-    case 'jar':
-      return { bodyHeight: H * 0.68, neckRadius: r * 0.94, shoulder: Math.min(r * 0.06, H * 0.05) };
-    case 'vial':
-      return { bodyHeight: H * 0.72, neckRadius: r * 0.62, shoulder: Math.min(r * 0.3, H * 0.08) };
-  }
 }
 
 type CapAccent = 'cap' | 'collar' | 'glass' | 'metal';
@@ -300,23 +422,19 @@ function BottleMesh({
   );
 
   const isVial = kind === 'vial';
-  const frontTexture = textures[labelFace] ?? null;
-  const showLabel = isVial || frontTexture !== null;
+  const labelTexture = textures[labelFace] ?? null;
+  const showLabel = isVial || labelTexture !== null;
 
   // Label band on the straight part of the body, centered on +Z (theta 0). Its arc follows the
   // artwork's aspect ratio so images aren't stretched; wide artwork wraps further round the bottle.
-  const straightBottom = Math.min(r * 0.12, bodyHeight * 0.1);
-  const straightTop = bodyHeight - shoulder;
-  const labelHeight = (straightTop - straightBottom) * 0.82;
-  const labelY = (straightTop + straightBottom) / 2;
-  const fullWrap = Math.PI * 2 * 0.985;
-  const labelArc = frontTexture
-    ? THREE.MathUtils.clamp((labelHeight * textureAspect(frontTexture)) / r, 0.35, fullWrap)
+  const band = labelBand(kind, r, H);
+  const fullWrap = Math.PI * 2 * FULL_WRAP;
+  const labelArc = labelTexture
+    ? THREE.MathUtils.clamp((band.height * textureAspect(labelTexture)) / r, 0.35, fullWrap)
     : fullWrap;
   const labelGeometry = useDisposable(
-    () =>
-      new THREE.CylinderGeometry(r * 1.004, r * 1.004, labelHeight, 128, 1, true, -labelArc / 2, labelArc),
-    [r, labelHeight, labelArc],
+    () => new THREE.CylinderGeometry(r * 1.004, r * 1.004, band.height, 128, 1, true, -labelArc / 2, labelArc),
+    [r, band.height, labelArc],
   );
 
   // Cap pieces.
@@ -450,8 +568,8 @@ function BottleMesh({
   }, [bodyMaterial, baseColor, finish]);
 
   useEffect(() => {
-    applySurface(labelMaterial, { map: frontTexture, baseColor, finish });
-  }, [labelMaterial, frontTexture, baseColor, finish]);
+    applySurface(labelMaterial, { map: labelTexture, baseColor, finish });
+  }, [labelMaterial, labelTexture, baseColor, finish]);
 
   return (
     <group>
@@ -459,12 +577,12 @@ function BottleMesh({
         <mesh
           geometry={liquidGeometry}
           material={liquidMaterial}
-          position={[0, straightBottom + liquidHeight / 2, 0]}
+          position={[0, band.straightBottom + liquidHeight / 2, 0]}
           renderOrder={1}
         />
       )}
       <mesh geometry={bodyGeometry} material={isVial ? glassMaterial : bodyMaterial} renderOrder={2} />
-      {showLabel && <mesh geometry={labelGeometry} material={labelMaterial} position={[0, labelY, 0]} />}
+      {showLabel && <mesh geometry={labelGeometry} material={labelMaterial} position={[0, band.centerY, 0]} />}
       {capGeometries.parts.map((part, i) => (
         <mesh
           key={i}
@@ -485,7 +603,8 @@ function VialSetMesh({
   textures,
   baseColor,
   finish,
-}: SurfaceProps & { preset: SetPreset; unitsPerMm: number }) {
+  openRef,
+}: SurfaceProps & { preset: SetPreset; unitsPerMm: number; openRef: MutableRefObject<number> }) {
   const { box, vial } = preset.dimensions;
   const totalWidth = box.width + vial.diameter * SET_GAP_RATIO + vial.diameter;
   const boxX = (-totalWidth / 2 + box.width / 2) * unitsPerMm;
@@ -506,11 +625,13 @@ function VialSetMesh({
   return (
     <group>
       <group position={[boxX, 0, 0]}>
-        <BoxMesh
+        <PanelBox
           size={[box.width * unitsPerMm, box.height * unitsPerMm, box.depth * unitsPerMm]}
+          thickness={boardThickness(preset) * unitsPerMm}
           textures={textures}
           baseColor={baseColor}
           finish={finish}
+          openRef={openRef}
         />
       </group>
       <group position={[vialX, 0, 0]}>
@@ -533,43 +654,37 @@ function VialSetMesh({
 
 export interface PackagingModelProps {
   preset: PackagingPreset;
-  artwork: ArtworkMap;
+  textures: TextureMap;
   finish: FinishId;
   baseColor: string;
+  /** Shared lid opening target (0..1), read every frame so animations don't re-render React. */
+  openRef: MutableRefObject<number>;
 }
 
-/** Packaging mesh for the active preset, resting on the floor (y = 0) and centered on the origin. */
-export default function PackagingModel({ preset, artwork, finish, baseColor }: PackagingModelProps) {
+/** One packaging model for the active preset, resting on the floor (y = 0) and centered on the origin. */
+export default function PackagingModel({ preset, textures, finish, baseColor, openRef }: PackagingModelProps) {
   const layout = useMemo(() => getModelLayout(preset), [preset]);
-  const faces = useMemo(() => facesForCategory(preset.category), [preset.category]);
-  const textures = useArtworkTextures(artwork, faces);
+  const surface = { textures, baseColor, finish };
 
-  if (preset.category === 'bottle') {
-    return (
-      <BottleMesh
-        // Remount on preset change so all per-shape resources are released together.
-        key={preset.id}
-        preset={preset}
-        unitsPerMm={layout.unitsPerMm}
-        textures={textures}
-        baseColor={baseColor}
-        finish={finish}
-      />
-    );
+  // `key` remounts on preset change so all per-shape resources are released together.
+  switch (preset.category) {
+    case 'bottle':
+      return <BottleMesh key={preset.id} preset={preset} unitsPerMm={layout.unitsPerMm} {...surface} />;
+    case 'set':
+      return (
+        <VialSetMesh key={preset.id} preset={preset} unitsPerMm={layout.unitsPerMm} openRef={openRef} {...surface} />
+      );
+    case 'label':
+      return <LabelMesh key={preset.id} size={layout.size} {...surface} />;
+    case 'box':
+      return (
+        <PanelBox
+          key={preset.id}
+          size={layout.size}
+          thickness={Math.max(boardThickness(preset) * layout.unitsPerMm, 0.004)}
+          openRef={openRef}
+          {...surface}
+        />
+      );
   }
-
-  if (preset.category === 'set') {
-    return (
-      <VialSetMesh
-        key={preset.id}
-        preset={preset}
-        unitsPerMm={layout.unitsPerMm}
-        textures={textures}
-        baseColor={baseColor}
-        finish={finish}
-      />
-    );
-  }
-
-  return <BoxMesh size={layout.size} textures={textures} baseColor={baseColor} finish={finish} />;
 }

@@ -13,14 +13,29 @@ npm run build      # type-check + production build into dist/
 npm run preview    # serve the production build
 ```
 
+## Editor (Pacdora-style)
+
+- **Edit**: upload one full dieline design (split onto every face automatically) or per-face artwork, pick a material (Matte, Glossy, Kraft, Corrugated, Metallic), base color, custom size, and download the dieline template as SVG.
+- **Models**: searchable library (boxes, mailers, bottles, vials, vial + box sets, labels), saved projects (stored in this browser with artwork), custom size in mm or inches.
+- **Layout**: single, duo, trio, front & back, standing + lying, stack, fan and flat lay arrangements.
+- **Video**: record a 360° spin or open/close animation (MP4 or WebM, 4 to 12 s).
+- **More**: background color or transparent, lighting environment, brightness, shadows, auto-rotate, export size (1080 to 6K), PNG/JPG, units.
+- **Toolbars**: zoom, open/close slider for boxes, Front / 3/4 / Side / Top views, dieline viewer, rotate/pan, undo/redo (Ctrl/Cmd+Z, Shift+Ctrl/Cmd+Z), reset view and export.
+- AI Background / AI Design are not included yet.
+
 ## Structure
 
 | File | Purpose |
 | --- | --- |
-| `src/constants/presets.ts` | Preset catalogue (mm), face order, finishes |
-| `src/components/PackagingModel.tsx` | Geometry, multi-material mapping, texture loading and disposal |
-| `src/components/SceneViewport.tsx` | R3F canvas, studio lights, HDR environment, contact shadows, orbit controls, PNG capture |
-| `src/App.tsx` | State, inspector sidebar, upload handlers, export/download |
+| `src/constants/presets.ts` | Preset catalogue (mm), face order, finishes, units |
+| `src/constants/layouts.ts` | Multi-instance layouts and their placement solver |
+| `src/lib/dieline.ts` | Dieline nets, SVG output, slicing a full design onto faces |
+| `src/lib/projects.ts` | Saved projects in IndexedDB |
+| `src/state/editor.ts` | Document state with undo/redo history |
+| `src/components/PackagingModel.tsx` | Geometry (opening boxes, bottles, vials, sets), materials, textures and disposal |
+| `src/components/SceneViewport.tsx` | R3F canvas, lighting, shadows, camera views, PNG capture, video recording |
+| `src/components/panels/*` | Edit, Models, Layout, Video and More panels |
+| `src/App.tsx` | Editor shell, toolbars, export, dieline modal |
 
 ## Notes
 
