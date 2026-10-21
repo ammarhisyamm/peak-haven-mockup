@@ -155,11 +155,22 @@ interface SceneContentProps {
   layoutId: LayoutId;
   openRef: MutableRefObject<number>;
   animationRef: MutableRefObject<Animation | null>;
+  labelShift: number;
   settings: ViewSettings;
 }
 
 /** Packaging instances for the active layout, plus the turntable / open-close animation driver. */
-function SceneContent({ preset, artwork, finish, baseColor, layoutId, openRef, animationRef, settings }: SceneContentProps) {
+function SceneContent({
+  preset,
+  artwork,
+  finish,
+  baseColor,
+  layoutId,
+  openRef,
+  animationRef,
+  labelShift,
+  settings,
+}: SceneContentProps) {
   // Loaded once and shared by every instance in the layout.
   const textures = useSceneTextures(artwork, preset);
   const layout = useMemo(() => getModelLayout(preset), [preset]);
@@ -193,7 +204,14 @@ function SceneContent({ preset, artwork, finish, baseColor, layoutId, openRef, a
       <group ref={rootRef}>
         {placed.instances.map((inst, i) => (
           <group key={i} position={inst.position} rotation={new THREE.Euler(...inst.rotation, 'YXZ')}>
-            <PackagingModel preset={preset} textures={textures} finish={finish} baseColor={baseColor} openRef={openRef} />
+            <PackagingModel
+              preset={preset}
+              textures={textures}
+              finish={finish}
+              baseColor={baseColor}
+              openRef={openRef}
+              labelShift={labelShift}
+            />
           </group>
         ))}
       </group>
@@ -241,6 +259,8 @@ export interface SceneViewportProps {
   baseColor: string;
   layoutId: LayoutId;
   open: number;
+  /** Bottle label rotation around the body, in degrees. */
+  labelShift: number;
   settings: ViewSettings;
   panMode: boolean;
   /** Horizontal shift (px) of the image so the model centers beside floating panels. */
@@ -248,7 +268,7 @@ export interface SceneViewportProps {
 }
 
 const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(function SceneViewport(
-  { preset, artwork, finish, baseColor, layoutId, open, settings, panMode, viewOffsetPx },
+  { preset, artwork, finish, baseColor, layoutId, open, labelShift, settings, panMode, viewOffsetPx },
   ref,
 ) {
   const stateRef = useRef<RootState | null>(null);
@@ -417,6 +437,7 @@ const SceneViewport = forwardRef<SceneViewportHandle, SceneViewportProps>(functi
         layoutId={layoutId}
         openRef={openRef}
         animationRef={animationRef}
+        labelShift={labelShift}
         settings={settings}
       />
 

@@ -251,6 +251,8 @@ export default function App() {
           onBaseColor={(baseColor) => update({ baseColor }, 'baseColor')}
           onSize={(size) => update({ size })}
           onDownloadDieline={downloadDieline}
+          labelShift={doc.labelShift ?? 0}
+          onLabelShift={(labelShift) => update({ labelShift }, 'labelShift')}
         />
       );
       break;
@@ -358,6 +360,7 @@ export default function App() {
                 baseColor={doc.baseColor}
                 layoutId={doc.layoutId}
                 open={doc.open}
+                labelShift={doc.labelShift ?? 0}
                 settings={settings}
                 panMode={panMode}
                 viewOffsetPx={0}

@@ -18,6 +18,7 @@ import { DropZone, FaceUploadRow, Field, PanelTitle, SectionLabel, SizeEditor } 
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
+import { Slider } from '../ui/slider';
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -40,6 +41,8 @@ export default function EditPanel({
   onBaseColor,
   onSize,
   onDownloadDieline,
+  labelShift,
+  onLabelShift,
 }: {
   preset: PackagingPreset;
   basePreset: PackagingPreset;
@@ -54,6 +57,8 @@ export default function EditPanel({
   onBaseColor: (c: string) => void;
   onSize: (s: SizeOverride | null) => void;
   onDownloadDieline: () => void;
+  labelShift: number;
+  onLabelShift: (degrees: number) => void;
 }) {
   const [sizeOpen, setSizeOpen] = useState(false);
   const [facesOpen, setFacesOpen] = useState(false);
@@ -85,6 +90,26 @@ export default function EditPanel({
         <Download data-icon="inline-start" />
         Download dieline (SVG)
       </Button>
+
+      {(preset.category === 'bottle' || preset.category === 'set') && (
+        <Field label="Label position" hint="Turn the artwork around the bottle to bring the front design into view.">
+          <div className="flex items-center gap-3 pt-1">
+            <Slider
+              min={-180}
+              max={180}
+              step={1}
+              value={[labelShift]}
+              onValueChange={([v]) => onLabelShift(v)}
+              aria-label="Label position"
+              className="flex-1"
+            />
+            <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">{Math.round(labelShift)}°</span>
+            <Button size="sm" variant="outline" disabled={labelShift === 0} onClick={() => onLabelShift(0)}>
+              Center
+            </Button>
+          </div>
+        </Field>
+      )}
 
       {preset.category === 'object' && (
         <ul className="mt-4 space-y-2">

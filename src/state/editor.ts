@@ -19,6 +19,8 @@ export interface EditorDoc {
   layoutId: LayoutId;
   /** Lid opening, 0 = closed, 1 = fully open. */
   open: number;
+  /** Turns the bottle label artwork around the body, in degrees (0 = centered on the front). */
+  labelShift?: number;
 }
 
 export const INITIAL_DOC: EditorDoc = {

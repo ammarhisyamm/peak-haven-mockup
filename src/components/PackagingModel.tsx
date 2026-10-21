@@ -394,7 +394,8 @@ function BottleMesh({
   baseColor,
   finish,
   labelFace = 'front',
-}: SurfaceProps & { preset: BottlePreset; unitsPerMm: number; labelFace?: FaceKey }) {
+  labelShift = 0,
+}: SurfaceProps & { preset: BottlePreset; unitsPerMm: number; labelFace?: FaceKey; labelShift?: number }) {
   const r = (preset.dimensions.diameter / 2) * unitsPerMm;
   const H = preset.dimensions.height * unitsPerMm;
   const { kind } = preset;
@@ -567,7 +568,14 @@ function BottleMesh({
         />
       )}
       <mesh geometry={bodyGeometry} material={isVial ? glassMaterial : bodyMaterial} renderOrder={2} />
-      {showLabel && <mesh geometry={labelGeometry} material={labelMaterial} position={[0, band.centerY, 0]} />}
+      {showLabel && (
+        <mesh
+          geometry={labelGeometry}
+          material={labelMaterial}
+          position={[0, band.centerY, 0]}
+          rotation={[0, THREE.MathUtils.degToRad(labelShift), 0]}
+        />
+      )}
       {capGeometries.parts.map((part, i) => (
         <mesh
           key={i}
@@ -589,7 +597,8 @@ function VialSetMesh({
   baseColor,
   finish,
   openRef,
-}: SurfaceProps & { preset: SetPreset; unitsPerMm: number; openRef: MutableRefObject<number> }) {
+  labelShift,
+}: SurfaceProps & { preset: SetPreset; unitsPerMm: number; openRef: MutableRefObject<number>; labelShift: number }) {
   const { box, vial } = preset.dimensions;
   const totalWidth = box.width + vial.diameter * SET_GAP_RATIO + vial.diameter;
   const boxX = (-totalWidth / 2 + box.width / 2) * unitsPerMm;
@@ -629,6 +638,7 @@ function VialSetMesh({
           baseColor={baseColor}
           finish={finish}
           labelFace="label"
+          labelShift={labelShift}
         />
       </group>
     </group>
@@ -646,20 +656,29 @@ export interface PackagingModelProps {
   baseColor: string;
   /** Shared lid opening target (0..1), read every frame so animations don't re-render React. */
   openRef: MutableRefObject<number>;
+  /** Bottle label rotation around the body, in degrees. */
+  labelShift?: number;
 }
 
 /** One packaging model for the active preset, resting on the floor (y = 0) and centered on the origin. */
-export default function PackagingModel({ preset, textures, finish, baseColor, openRef }: PackagingModelProps) {
+export default function PackagingModel({ preset, textures, finish, baseColor, openRef, labelShift = 0 }: PackagingModelProps) {
   const layout = useMemo(() => getModelLayout(preset), [preset]);
   const surface = { textures, baseColor, finish };
 
   // `key` remounts on preset change so all per-shape resources are released together.
   switch (preset.category) {
     case 'bottle':
-      return <BottleMesh key={preset.id} preset={preset} unitsPerMm={layout.unitsPerMm} {...surface} />;
+      return <BottleMesh key={preset.id} preset={preset} unitsPerMm={layout.unitsPerMm} labelShift={labelShift} {...surface} />;
     case 'set':
       return (
-        <VialSetMesh key={preset.id} preset={preset} unitsPerMm={layout.unitsPerMm} openRef={openRef} {...surface} />
+        <VialSetMesh
+          key={preset.id}
+          preset={preset}
+          unitsPerMm={layout.unitsPerMm}
+          openRef={openRef}
+          labelShift={labelShift}
+          {...surface}
+        />
       );
     case 'label':
       return <LabelMesh key={preset.id} size={layout.size} {...surface} />;
